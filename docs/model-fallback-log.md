@@ -8,9 +8,11 @@ Every logged entry is tracked as a pending retrospective verification item for t
 
 ## Log Entries
 
-| Timestamp | Task ID & Description | Target Tier & Model | Fallback Model Used | Trigger Reason | Code Quality Audit Status | Retrospective Notes & Improvements |
+| Timestamp | Task ID & Description | Target Tier & Model | Actual Model Used | Trigger Reason | Code Quality Audit Status | Retrospective Notes & Improvements |
 |---|---|---|---|---|---|---|
-| _(None yet)_ | — | — | — | — | **N/A** | All systems nominal. |
+| 2026-10-25 15:47 | M7 Packaging & User Guide (`36fa3616`) | `[T1]` `flash` | `inherit` (Claude 3.7 Sonnet) | Subagent runtime routed to default session model rather than requested lean tier | **AUDITED & PASSED** | Scripts (`package-release.ps1`, `install.ps1`, `uninstall.ps1`) and docs verified clean. Promoted env preamble lesson to kit. |
+| 2026-10-25 16:54 | M10.1 Setup Wizard Scripting (`63acd115`) | `[T1]` `flash` | `inherit` (Claude 3.7 Sonnet) | Subagent execution reported parent inherit model | **AUDITED & PASSED** | Zero-elevation installer (`setup-wizard.ps1`, `setup.cmd`, `installer.iss`) verified clean. |
+| 2026-10-25 16:54 | M9.3 Hardware QA View (`092b4c29`) | `[T2]` `flash` | `inherit` (Gemini 2.5 Pro) | Subagent execution reported parent inherit model | **AUDITED & PASSED** | Visual 109-key matrix and dual-listener verified clean with 7 unit tests. |
 
 ---
 

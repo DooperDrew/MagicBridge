@@ -8,6 +8,10 @@
 > - `[T1]` **Lean:** Pure logic, schemas, unit tests, i18n (`flash_lite` / `flash`).
 > - `[T2]` **Moderate:** UI views, tray callbacks, named pipe IPC (`flash` / `pro`).
 > - `[T3]` **Complex / Critical:** Low-level hooks, atomic table swaps, raw HID (`pro` / `inherit`).
+>
+> **Living Context:** See [`docs/retrospective.md`](retrospective.md) for project history and transcript mining evidence, and [`docs/lessons-learned.md`](lessons-learned.md) for promoted rules.
+>
+> **Evidence Principle:** In accordance with the Project Kickstart working agreement, automated invariant test passes are distinguished from physical hardware confirmation. Physical hardware QA items remain marked `[ ] Pending Physical Evidence` until confirmed by human testing on the physical device.
 
 ## M0 — Hardware spike 🔬 (decision gate)
 Goal: learn exactly what the A1843 sends on Windows, over USB and Bluetooth.
@@ -77,12 +81,13 @@ Goal: learn exactly what the A1843 sends on Windows, over USB and Bluetooth.
 - [x] `[T1]` M8.3 Publish GitHub Release `v0.1.0` with bundled distribution archive (`dist/MagicBridge-v0.1.0-windows-x64.zip`) verifying 100% parity between local repository and GitHub. _(2026-10-25 — M8.3 completed)_
 **Exit:** Comprehensive multi-agent methodology guide, interactive GUI architecture tab, and GitHub Release v0.1.0 published with binary asset. — **MILESTONE 8 COMPLETE ✅**
 
-## M9 — Quality Assurance & Empirical Validation
+## M9 — Quality Assurance & Empirical Validation 🔬
 Goal: Systematically validate MagicBridge against physical A1843 hardware, edge-case power states, and security boundaries. Documented in `docs/06-qa-and-validation.md`.
-- [ ] `[T2]` M9.1 Physical A1843 hardware matrix execution: USB (`0x05AC`) and Bluetooth (`0x004C`), ISO Italian AltGr quirk suppression, Fn layer combos, and top-row toggling. _(Tooling ready via Hardware QA Tab; awaiting physical session)_
-- [ ] `[T3]` M9.2 Edge-case power & security validation: Modern standby/sleep resume, emergency disconnect key release, UIPI elevated window behavior, and Game Mode auto-pause.
-- [x] `[T1]` M9.3 Automated diagnostic & QA probe reporting: Interactive 109-key visual verification tool (`qa_view.rs`) with live keypress listener, category tracking, and export to Desktop/AppData. _(2026-10-25 — M9.3 completed)_
-**Exit:** 100% pass rate across physical A1843 hardware matrix and zero lingering keys or crashes in edge cases.
+- [ ] `[T2]` M9.1 Physical A1843 hardware matrix execution: USB (`0x05AC`) and Bluetooth (`0x004C`), ISO Italian AltGr quirk suppression, Fn layer combos, and top-row toggling. _(Tooling ready via Hardware QA Tab; Pending Physical Confirmation)_
+- [ ] `[T3]` M9.2 Edge-case power & security validation: Modern standby/sleep resume, emergency disconnect key release, UIPI elevated window behavior, and Game Mode auto-pause. _(Automated mocks passing; Pending Physical Confirmation)_
+- [x] `[T1]` M9.3 Automated diagnostic & QA probe reporting: Interactive 109-key visual verification tool (`qa_view.rs`) with live keypress listener, category tracking, and export to Desktop/AppData. _(2026-10-25 — M9.3 completed in 65fa05d)_
+- [x] `[T1]` M9.4 Retrospective audit & hygiene: Align claims in docs with empirical evidence, log model tier executions, and link retrospective/lessons-learned in roadmap. _(2026-10-25 — M9.4 completed)_
+**Exit:** 100% pass rate across physical A1843 hardware matrix recorded by human testing, zero lingering keys or crashes in edge cases.
 
 ## M10 — User Experience & Onboarding Improvements
 Goal: Elevate the out-of-the-box user experience with guided installation, interactive first-run onboarding, and responsive GUI layouts. Documented in `docs/07-ux-and-improvements.md`.
