@@ -4,8 +4,10 @@
 
 .DESCRIPTION
     Builds the MagicBridge Cargo workspace in release mode, validates that all
-    required binary and resource artifacts exist, stages them into a clean bundle,
-    and creates a portable zip archive in the output directory (default: dist/).
+    required binary and resource artifacts exist, stages them into a clean bundle
+    (including setup-wizard.ps1, setup.cmd, install.ps1, uninstall.ps1, and locales),
+    creates a portable zip archive in the output directory (default: dist/), and
+    optionally compiles an Inno Setup installer executable if Inno Setup is detected.
 
 .PARAMETER Version
     The release version string (e.g. "0.1.0"). If omitted, the version is
@@ -72,7 +74,7 @@ if (-not $Version) {
 
 # 1. Build workspace in release mode
 if (-not $SkipBuild) {
-    Write-Host "`n[1/4] Compiling workspace in release mode..." -ForegroundColor Cyan
+    Write-Host "`n[1/5] Compiling workspace in release mode..." -ForegroundColor Cyan
     $BuildArgs = @("build", "--workspace", "--release")
     & cargo @BuildArgs
     if ($LASTEXITCODE -ne 0) {
@@ -80,11 +82,11 @@ if (-not $SkipBuild) {
     }
     Write-Host "Release compilation succeeded." -ForegroundColor Green
 } else {
-    Write-Host "`n[1/4] Skipping build as requested (-SkipBuild)..." -ForegroundColor Yellow
+    Write-Host "`n[1/5] Skipping build as requested (-SkipBuild)..." -ForegroundColor Yellow
 }
 
 # 2. Verify release binaries exist
-Write-Host "`n[2/4] Verifying release binaries and assets..." -ForegroundColor Cyan
+Write-Host "`n[2/5] Verifying release binaries and assets..." -ForegroundColor Cyan
 $AgentExe = Join-Path $RepoRoot "target\release\magicbridge-agent.exe"
 $SettingsExe = Join-Path $RepoRoot "target\release\magicbridge-settings.exe"
 $LocalesSrc = Join-Path $RepoRoot "crates\settings\locales"
@@ -114,7 +116,7 @@ Write-Host "  - Found translations: $LocalesSrc" -ForegroundColor Green
 Write-Host "  - Found documentation and license." -ForegroundColor Green
 
 # 3. Create clean staging directory
-Write-Host "`n[3/4] Assembling staging directory..." -ForegroundColor Cyan
+Write-Host "`n[3/5] Assembling staging directory..." -ForegroundColor Cyan
 $AbsoluteOutputDir = Join-Path $RepoRoot $OutputDir
 if (-not (Test-Path $AbsoluteOutputDir)) {
     New-Item -ItemType Directory -Path $AbsoluteOutputDir -Force | Out-Null
@@ -145,20 +147,33 @@ if (Test-Path $UserGuideSrc) {
     Copy-Item -Path $UserGuideSrc -Destination $StagingDir -Force
 }
 
-# Copy optional installer scripts if present
+# Copy installer and setup scripts
+$SetupWizardScript = Join-Path $RepoRoot "scripts\setup-wizard.ps1"
+$SetupCmd = Join-Path $RepoRoot "scripts\setup.cmd"
 $InstallScript = Join-Path $RepoRoot "scripts\install.ps1"
 $UninstallScript = Join-Path $RepoRoot "scripts\uninstall.ps1"
+$InstallerIss = Join-Path $RepoRoot "scripts\installer.iss"
+
+if (Test-Path $SetupWizardScript) {
+    Copy-Item -Path $SetupWizardScript -Destination $StagingDir -Force
+}
+if (Test-Path $SetupCmd) {
+    Copy-Item -Path $SetupCmd -Destination $StagingDir -Force
+}
 if (Test-Path $InstallScript) {
     Copy-Item -Path $InstallScript -Destination $StagingDir -Force
 }
 if (Test-Path $UninstallScript) {
     Copy-Item -Path $UninstallScript -Destination $StagingDir -Force
 }
+if (Test-Path $InstallerIss) {
+    Copy-Item -Path $InstallerIss -Destination $StagingDir -Force
+}
 
 Write-Host "Staging folder populated at: $StagingDir" -ForegroundColor Green
 
 # 4. Create ZIP package
-Write-Host "`n[4/4] Creating ZIP package..." -ForegroundColor Cyan
+Write-Host "`n[4/5] Creating ZIP package..." -ForegroundColor Cyan
 $ZipFilePath = Join-Path $AbsoluteOutputDir "$ArchiveBaseName.zip"
 if (Test-Path $ZipFilePath) {
     Remove-Item -Path $ZipFilePath -Force
@@ -171,6 +186,36 @@ Remove-Item -Path (Join-Path $AbsoluteOutputDir "staging") -Recurse -Force
 
 $ZipItem = Get-Item $ZipFilePath
 $ZipSizeMB = [math]::Round($ZipItem.Length / 1MB, 2)
+
+# 5. Optional Inno Setup compilation
+Write-Host "`n[5/5] Checking for Inno Setup compiler (iscc.exe)..." -ForegroundColor Cyan
+$CandidateIscc = @(
+    (Get-Command iscc.exe -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -ErrorAction SilentlyContinue),
+    "${env:ProgramFiles(x86)}\Inno Setup 6\iscc.exe",
+    "$env:ProgramFiles\Inno Setup 6\iscc.exe",
+    "${env:ProgramFiles(x86)}\Inno Setup 5\iscc.exe",
+    "$env:ProgramFiles\Inno Setup 5\iscc.exe"
+)
+$IsccExe = $CandidateIscc | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+
+if ($IsccExe -and (Test-Path $InstallerIss)) {
+    Write-Host "  Found Inno Setup compiler: $IsccExe" -ForegroundColor Green
+    Write-Host "  Compiling Inno Setup installer..." -ForegroundColor Cyan
+    & $IsccExe "/DMyAppVersion=$Version" $InstallerIss
+    if ($LASTEXITCODE -eq 0) {
+        $SetupExe = Join-Path $AbsoluteOutputDir "MagicBridge-v$Version-Setup.exe"
+        if (Test-Path $SetupExe) {
+            $SetupItem = Get-Item $SetupExe
+            $SetupSizeMB = [math]::Round($SetupItem.Length / 1MB, 2)
+            Write-Host "  Built Inno Setup installer: $SetupExe ($SetupSizeMB MB)" -ForegroundColor Green
+        }
+    } else {
+        Write-Warning "Inno Setup compilation exited with code $LASTEXITCODE"
+    }
+} else {
+    Write-Host "  Inno Setup compiler (iscc.exe) not detected on PATH or Program Files." -ForegroundColor Gray
+    Write-Host "  (Setup wizard script 'setup-wizard.ps1' is bundled inside the release ZIP)." -ForegroundColor Gray
+}
 
 Write-Host "`n==================================================" -ForegroundColor Green
 Write-Host "       RELEASE PACKAGING COMPLETE SUCCESS         " -ForegroundColor Green

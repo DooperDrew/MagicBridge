@@ -12,6 +12,8 @@ pub use app::{MagicBridgeApp, SettingsTab};
 pub use i18n::I18n;
 pub use ipc::SettingsIpc;
 pub use keyboard_model::{A1843Model, KeyCluster, PhysicalKey};
+pub use views::qa_view::HardwareQaViewState;
+pub use views::wizard_view::{OnboardingWizardState, WizardAction};
 
 #[cfg(test)]
 mod tests {

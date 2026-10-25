@@ -54,14 +54,27 @@ MagicBridge fixes all of these issues while maintaining uncompromising system in
 4. A keyboard icon will appear in your Windows System Tray (notification area next to the clock).
 5. Right-click the tray icon and select **Open Settings** (or launch `magicbridge-settings.exe`) to customize your layout.
 
-### Option B: User-Space Installer
-MagicBridge provides an automated, non-admin installation script:
-1. Open PowerShell in the extracted release folder.
-2. Run:
-   ```powershell
-   .\install.ps1
-   ```
-3. This installs MagicBridge to `%LOCALAPPDATA%\Programs\MagicBridge`, adds Start Menu shortcuts, sets up autostart at Windows logon, and launches the agent.
+### Option B: Guided Setup Wizard (Recommended)
+MagicBridge provides a zero-elevation graphical setup wizard:
+1. In the extracted release folder, double-click `setup.cmd` (or open PowerShell and run `.\setup-wizard.ps1`).
+2. The guided setup wizard allows you to:
+   - Select installation destination (default: `%LOCALAPPDATA%\Programs\MagicBridge`, no Administrator privileges needed).
+   - Toggle Start Menu and Desktop shortcuts.
+   - Configure automatic launch on Windows sign-in (per-user registry).
+   - Automatically launch the settings wizard upon completion.
+3. MagicBridge registers cleanly in Windows **Installed apps** (Add or Remove Programs) with full uninstallation support.
+
+For unattended or headless environments:
+```powershell
+# Silent zero-touch installation:
+.\setup-wizard.ps1 -Silent
+
+# Console-mode interactive setup:
+.\setup-wizard.ps1 -NoGui
+
+# Script installer:
+.\install.ps1
+```
 
 ---
 
@@ -297,12 +310,19 @@ If you extracted MagicBridge from a zip archive without running the installer:
 4. (Optional) Delete your saved profiles and configuration located at `%APPDATA%\MagicBridge`.
 
 ### Automated Uninstaller
-If you installed MagicBridge or wish to clean up all traces:
-1. Open PowerShell and run:
+MagicBridge can be uninstalled cleanly at any time:
+1. **Via Windows Settings / Control Panel:**
+   Open Windows **Settings &rarr; Apps &rarr; Installed apps**, find **MagicBridge (Apple Magic Keyboard for Windows)**, and click **Uninstall**.
+2. **Via PowerShell Script:**
+   Open PowerShell and run:
    ```powershell
-   .\scripts\uninstall.ps1 -PurgeData
+   .\uninstall.ps1
    ```
-2. The uninstaller terminates running processes, removes the autostart registry entry, deletes Start Menu shortcuts, and purges `%APPDATA%\MagicBridge`.
+   Or for an automated silent purge:
+   ```powershell
+   .\uninstall.ps1 -Silent -PurgeData
+   ```
+The uninstaller terminates running processes, removes the autostart registry entry, cleans Start Menu and Desktop shortcuts, removes the Windows Add/Remove Programs registry entry, and removes application binaries. User profiles and settings in `%APPDATA%\MagicBridge` can be preserved or purged.
 
 ---
 

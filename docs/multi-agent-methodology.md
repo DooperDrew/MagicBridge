@@ -187,6 +187,37 @@ flowchart TD
 
 ---
 
+### Phase 6: Milestones 9 & 10 Parallelization (UX Onboarding, Hardware QA & Responsive Layout)
+
+In Phase 6, 4 autonomous worker subagents were spawned simultaneously across isolated branch workspaces to accelerate user onboarding, responsive design, and hardware QA preparation:
+
+```mermaid
+flowchart TD
+    subgraph PARALLEL_PHASE_6["Parallel Execution Sprint (Milestones 9 & 10)"]
+        W1["Worker 1: T1-Package-M10 (flash)<br/>Scope: Guided Installer Wizard (Issue #12)<br/>• scripts/setup-wizard.ps1 zero-elevation installer<br/>• Start menu, desktop shortcuts & uninstall registration<br/>• Auto-termination of running daemon during update"]
+        W2["Worker 2: T2-UI-KeyQA-M9 (flash)<br/>Scope: Hardware Key Diagnostic Matrix (Issue #10 Prep)<br/>• crates/settings/src/views/qa_view.rs<br/>• Live physical key event listener & green matrix highlight<br/>• 109-key progress tracking & timestamped QA report export"]
+        W3["Worker 3: T2-UI-Onboarding-M10 (flash)<br/>Scope: First-Run Setup Wizard (Issue #13)<br/>• crates/settings/src/views/wizard_view.rs<br/>• Guided layout, modifier preset, Fn key selection<br/>• Real-time interactive key test box & autostart"]
+        W4["Worker 4: T2-UI-Responsive-M10 (flash)<br/>Scope: Fluid Responsive Layout (Issue #14)<br/>• Clamped key_size scaling: (available_width / 24.5)<br/>• Adaptive compact drawer/tabs bar (<850px)<br/>• Proportional typography & DPI scaling"]
+    end
+    
+    LEAD["Lead Orchestrator (Sole Committer)"] -->|"Spawns Branch 1"| W1
+    LEAD -->|"Spawns Branch 2"| W2
+    LEAD -->|"Spawns Branch 3"| W3
+    LEAD -->|"Spawns Branch 4"| W4
+    
+    W1 -->|"Report: Installer verified"| LEAD
+    W2 -->|"Report: QA view & tests passed"| LEAD
+    W3 -->|"Report: Wizard view & tests passed"| LEAD
+    W4 -->|"Report: Responsive layout passed"| LEAD
+    
+    LEAD -->|"Integrates & runs Quality Gate"| MERGE6["Verification Gate:<br/>• cargo fmt, clippy -D warnings<br/>• Full test suite<br/>• Release build"]
+    MERGE6 -->|"Sole Committer Push"| PHASE6_DONE["Milestones 9 & 10 Features Active on GitHub"]
+```
+
+**Why this succeeded:** Clear orthogonal task definitions! Worker 1 owned installer scripting, Worker 2 owned `qa_view.rs`, Worker 3 owned `wizard_view.rs`, and Worker 4 owned layout scaling in `keyboard_view.rs` and `app.rs`.
+
+---
+
 ## 5. Standardized Subagent Taxonomy & Reporting Contract
 
 Every subagent follows a strict naming taxonomy and returns a machine-parsable completion report:

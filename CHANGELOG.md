@@ -4,6 +4,45 @@ All development steps, hardware discoveries, architectural decisions, and commit
 
 ---
 
+## 2026-10-25 — Phase 6: UX Onboarding, Responsive Settings & Hardware QA Tooling
+
+### M10.1 — Guided Windows Installer Wizard (Completed ✅, closes #12)
+- Implemented rich graphical Windows setup wizard (`scripts/setup-wizard.ps1`) and Explorer double-click launcher (`scripts/setup.cmd`):
+  - Zero-elevation installation directly into `%LOCALAPPDATA%\Programs\MagicBridge`.
+  - Windows Forms wizard with custom install destination selection, Start Menu shortcut toggle, Desktop shortcut toggle, Windows sign-in autostart toggle, and option to launch the setup wizard immediately upon finish.
+  - Automatically terminates running `magicbridge-agent.exe` prior to file copy to prevent in-use binary locking.
+  - Registers Windows Settings "Installed apps" & Control Panel uninstaller in `HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\MagicBridge` with complete metadata (`DisplayName`, `Publisher`, `DisplayVersion`, `DisplayIcon`, `UninstallString`, `QuietUninstallString`).
+  - Added production-grade Inno Setup script (`scripts/installer.iss`) with `PrivilegesRequired=lowest`.
+  - Self-cleaning uninstallation script (`scripts/uninstall.ps1`) supporting interactive and silent modes.
+  - Updated `scripts/package-release.ps1` to bundle setup tools in `dist/`.
+
+### M10.2 — First-Run Initial Configuration Onboarding Wizard (Completed ✅, closes #13)
+- Created `crates/settings/src/views/wizard_view.rs`:
+  - 6-step guided setup flow: Welcome & hardware auto-detection (USB/BT, battery), Layout selection (ISO Italian, ANSI US, ISO UK, ISO German, ISO French), Modifier Preset selection (Mac Layout vs Windows Standard), Fn Trigger key choice (Right Option, Right Control, Caps Lock, F19), Autostart preference, and Real-time interactive key test box.
+  - Integrated into Settings GUI as dedicated **🪄 Setup Wizard** tab.
+  - Complete English and Italian localization keys under `[wizard]`.
+  - Comprehensive unit test suite covering transitions and config mutation.
+
+### M10.3 — Fluid Responsive Settings Layout & Adaptive Navigation (Completed ✅, closes #14)
+- Enhanced `crates/settings/src/views/keyboard_view.rs`:
+  - Responsive visual keyboard grid with dynamic unit size clamping: `(available_width / 24.5).clamp(20.0, 42.0)`.
+  - Proportional font scaling (`calculate_key_font_size`) and key padding avoiding label clipping on compact screens (<900px) and maintaining crispness on 4K ultra-wide displays.
+  - Adaptive Key Editor side-panel: dynamic stacked layout on compact screens (<850px) vs side-by-side on wide screens.
+- Enhanced `crates/settings/src/app.rs`:
+  - Defined `COMPACT_MODE_BREAKPOINT = 850.0`.
+  - Adaptive Navigation Tab Bar: Compact Mode (<850px) renders compact icon-only buttons with hover tooltips and scrollable horizontal rail, preventing overflow or awkward wrapping. Full Mode (>=850px) renders complete icon + label tabs.
+
+### M9.3 — Interactive Step-by-Step Hardware QA Key Verification Tool (Completed ✅)
+- Created `crates/settings/src/views/qa_view.rs`:
+  - Visual matrix of all 109 physical keys on Apple Magic Keyboard (Model A1843).
+  - Dual-listener engine capturing window events and Win32 `GetAsyncKeyState` modifier states (differentiating physical Left vs Right Command, Option, Control, and Shift).
+  - Turns verified keys bright green (`#2ECC71`) in real-time as keys are pressed physically.
+  - Progress tracking (`Verified: X / 109 keys (Y%)`) with celebratory state and category breakdowns (Modifiers, Navigation, Number Row, Function Row F1..F19, Numpad including Clear, Alphanumeric).
+  - One-click QA Log Export saving formatted `.txt` and programmatic `.json` reports to Desktop/AppData.
+  - Integrated as dedicated **🧪 Hardware QA** tab in Settings.
+
+---
+
 ## 2026-10-25 — QA Framework, UX Specifications & GitHub Issue Tracking
 
 ### QA Test Suite & UX Backlog Formalization

@@ -15,8 +15,19 @@ use crate::ipc::SettingsIpc;
 use crate::views::architecture_view::ArchitectureViewState;
 use crate::views::general_view::GeneralViewState;
 use crate::views::keyboard_view::{self, ConfigChange, KeyboardViewState};
+use crate::views::qa_view::{self, HardwareQaViewState};
 use crate::views::top_row_view::{self, TopRowViewState};
+use crate::views::wizard_view::{self, OnboardingWizardState};
 use crate::views::{about_view, battery_view, general_view};
+
+/// Compact mode breakpoint width in points.
+pub const COMPACT_MODE_BREAKPOINT: f32 = 850.0;
+
+/// Returns true if the available width triggers compact navigation mode (<850px).
+#[must_use]
+pub fn is_compact_mode(width: f32) -> bool {
+    width < COMPACT_MODE_BREAKPOINT
+}
 
 /// Navigation tabs in the settings window.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -26,6 +37,8 @@ pub enum SettingsTab {
     TopRow,
     Battery,
     General,
+    Wizard,
+    HardwareQa,
     Architecture,
     About,
 }
@@ -44,6 +57,8 @@ pub struct MagicBridgeApp {
     pub top_row_state: TopRowViewState,
     pub general_state: GeneralViewState,
     pub architecture_state: ArchitectureViewState,
+    pub wizard_state: OnboardingWizardState,
+    pub qa_state: HardwareQaViewState,
 }
 
 impl MagicBridgeApp {
@@ -56,6 +71,8 @@ impl MagicBridgeApp {
         let ipc = SettingsIpc::new();
         let daemon_status = ipc.query_status();
         let general_state = GeneralViewState::new_from_config(&config);
+        let wizard_state = OnboardingWizardState::new_from_config(&config);
+        let qa_state = HardwareQaViewState::default();
 
         Self {
             current_tab: SettingsTab::Keyboard,
@@ -70,6 +87,8 @@ impl MagicBridgeApp {
             top_row_state: TopRowViewState::default(),
             general_state,
             architecture_state: ArchitectureViewState::default(),
+            wizard_state,
+            qa_state,
         }
     }
 
@@ -88,30 +107,26 @@ impl MagicBridgeApp {
             let _ = self.ipc.switch_profile(profile_name);
         }
     }
-
-    /// Polls the daemon status if the poll interval has elapsed.
-    fn check_daemon_status(&mut self) {
-        if self.last_poll.elapsed() >= Duration::from_millis(1500) {
-            self.daemon_status = self.ipc.query_status();
-            self.last_poll = Instant::now();
-        }
-    }
 }
 
 impl App for MagicBridgeApp {
     fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
-        self.check_daemon_status();
+        // Poll daemon status every 2 seconds
+        if self.last_poll.elapsed() >= Duration::from_secs(2) {
+            self.daemon_status = self.ipc.query_status();
+            self.last_poll = Instant::now();
+        }
 
-        // 1. "Agent Not Running" Top Banner (F7.1)
-        let agent_running = self.daemon_status.as_ref().is_some_and(|s| s.agent_running);
-
-        if !agent_running {
-            TopBottomPanel::top("offline_banner").show(ctx, |ui| {
+        // 1. "Agent Not Running" Warning Banner (F7.1)
+        if self.daemon_status.is_none() {
+            TopBottomPanel::top("agent_warning_banner").show(ctx, |ui| {
                 ui.horizontal(|ui| {
-                    ui.colored_label(
-                        Color32::from_rgb(220, 60, 40),
-                        format!("⚠ {}", self.i18n.t("banner.agent_not_running")),
+                    ui.label(
+                        RichText::new(format!("⚠ {}", self.i18n.t("banner.agent_not_running")))
+                            .color(Color32::from_rgb(200, 140, 0))
+                            .strong(),
                     );
+                    ui.add_space(8.0);
                     if ui.button(self.i18n.t("banner.start_agent")).clicked() {
                         match SettingsIpc::launch_agent() {
                             Ok(()) => {
@@ -139,92 +154,183 @@ impl App for MagicBridgeApp {
             });
         }
 
-        // 2. Top Navigation Tabs Bar
+        // 2. Top Navigation Tabs Bar (F7.1, Issue #14: Adaptive Responsive Tabs)
         TopBottomPanel::top("tabs_bar").show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                ui.add_space(4.0);
+            let available_width = ui.available_width();
+            let is_compact = is_compact_mode(available_width);
 
-                let tabs = [
-                    (SettingsTab::Keyboard, "⌨ ", "tab.keyboard"),
-                    (SettingsTab::TopRow, "🎛 ", "tab.top_row"),
-                    (SettingsTab::Battery, "🔋 ", "tab.battery"),
-                    (SettingsTab::General, "⚙ ", "tab.general"),
-                    (SettingsTab::Architecture, "🤖 ", "tab.architecture"),
-                    (SettingsTab::About, "ℹ ", "tab.about"),
-                ];
+            let tabs = [
+                (SettingsTab::Keyboard, "⌨", "tab.keyboard"),
+                (SettingsTab::TopRow, "🎛", "tab.top_row"),
+                (SettingsTab::Battery, "🔋", "tab.battery"),
+                (SettingsTab::General, "⚙", "tab.general"),
+                (SettingsTab::Wizard, "🪄", "tab.wizard"),
+                (SettingsTab::HardwareQa, "🧪", "tab.qa"),
+                (SettingsTab::Architecture, "🤖", "tab.architecture"),
+                (SettingsTab::About, "ℹ", "tab.about"),
+            ];
 
-                for (tab, icon, key) in tabs {
-                    let label = format!("{}{}", icon, self.i18n.t(key));
-                    let is_active = self.current_tab == tab;
-                    let text = if is_active {
-                        RichText::new(label).strong()
-                    } else {
-                        RichText::new(label)
-                    };
+            if is_compact {
+                // Compact Mode (<850px): icon-only buttons with tooltips in a horizontal scrollable rail
+                egui::ScrollArea::horizontal()
+                    .id_salt("tabs_scroll_area")
+                    .show(ui, |ui| {
+                        ui.horizontal(|ui| {
+                            ui.add_space(4.0);
+                            for (tab, icon, key) in tabs {
+                                let is_active = self.current_tab == tab;
+                                let tooltip = self.i18n.t(key);
+                                let text = if is_active {
+                                    RichText::new(icon).size(16.0).strong()
+                                } else {
+                                    RichText::new(icon).size(16.0)
+                                };
 
-                    if ui.selectable_label(is_active, text).clicked() {
-                        self.current_tab = tab;
+                                if ui
+                                    .selectable_label(is_active, text)
+                                    .on_hover_text(tooltip)
+                                    .clicked()
+                                {
+                                    self.current_tab = tab;
+                                }
+                            }
+
+                            // Show active tab title at the end of the compact rail
+                            ui.separator();
+                            let active_title = match self.current_tab {
+                                SettingsTab::Keyboard => self.i18n.t("tab.keyboard"),
+                                SettingsTab::TopRow => self.i18n.t("tab.top_row"),
+                                SettingsTab::Battery => self.i18n.t("tab.battery"),
+                                SettingsTab::General => self.i18n.t("tab.general"),
+                                SettingsTab::Wizard => self.i18n.t("tab.wizard"),
+                                SettingsTab::HardwareQa => self.i18n.t("tab.qa"),
+                                SettingsTab::Architecture => self.i18n.t("tab.architecture"),
+                                SettingsTab::About => self.i18n.t("tab.about"),
+                            };
+                            ui.label(RichText::new(active_title).strong());
+                        });
+                    });
+            } else {
+                // Full Mode (>=850px): full icon + label tabs
+                ui.horizontal(|ui| {
+                    ui.add_space(4.0);
+                    for (tab, icon, key) in tabs {
+                        let label = format!("{} {}", icon, self.i18n.t(key));
+                        let is_active = self.current_tab == tab;
+                        let text = if is_active {
+                            RichText::new(label).strong()
+                        } else {
+                            RichText::new(label)
+                        };
+
+                        if ui.selectable_label(is_active, text).clicked() {
+                            self.current_tab = tab;
+                        }
                     }
-                }
-            });
+                });
+            }
         });
 
         // 3. Central Content Panel
-        egui::CentralPanel::default().show(ctx, |ui| match self.current_tab {
-            SettingsTab::Keyboard => {
-                if let Some(change) =
-                    keyboard_view::show(ui, &mut self.keyboard_state, &mut self.config, &self.i18n)
-                {
-                    match change {
-                        ConfigChange::Modified => {
-                            self.persist_and_notify();
+        egui::CentralPanel::default().show(ctx, |ui| {
+            egui::ScrollArea::vertical()
+                .auto_shrink([false, false])
+                .show(ui, |ui| match self.current_tab {
+                    SettingsTab::Keyboard => {
+                        if let Some(change) = keyboard_view::show(
+                            ui,
+                            &mut self.keyboard_state,
+                            &mut self.config,
+                            &self.i18n,
+                        ) {
+                            match change {
+                                ConfigChange::Modified => {
+                                    self.persist_and_notify();
+                                }
+                                ConfigChange::ActiveProfileChanged(name) => {
+                                    self.switch_profile_and_notify(&name);
+                                }
+                                ConfigChange::ProfileCreated(name) => {
+                                    self.switch_profile_and_notify(&name);
+                                }
+                                ConfigChange::ProfileDeleted(_) => {
+                                    self.persist_and_notify();
+                                }
+                            }
                         }
-                        ConfigChange::ActiveProfileChanged(name) => {
-                            self.switch_profile_and_notify(&name);
-                        }
-                        ConfigChange::ProfileCreated(name) => {
-                            self.switch_profile_and_notify(&name);
-                        }
-                        ConfigChange::ProfileDeleted(_) => {
+                    }
+                    SettingsTab::TopRow => {
+                        if top_row_view::show(
+                            ui,
+                            &mut self.top_row_state,
+                            &mut self.config,
+                            &self.i18n,
+                        ) {
                             self.persist_and_notify();
                         }
                     }
-                }
-            }
-            SettingsTab::TopRow => {
-                if top_row_view::show(ui, &mut self.top_row_state, &mut self.config, &self.i18n) {
-                    self.persist_and_notify();
-                }
-            }
-            SettingsTab::Battery => {
-                if battery_view::show(
-                    ui,
-                    self.daemon_status.as_ref(),
-                    &mut self.config,
-                    &self.i18n,
-                ) {
-                    self.persist_and_notify();
-                }
-            }
-            SettingsTab::General => {
-                if general_view::show(
-                    ui,
-                    &mut self.general_state,
-                    &mut self.config,
-                    &mut self.i18n,
-                ) {
-                    self.persist_and_notify();
-                }
-            }
-            SettingsTab::Architecture => {
-                self.architecture_state.ui(ui, &self.i18n);
-            }
-            SettingsTab::About => {
-                about_view::show(ui, self.daemon_status.as_ref(), &self.i18n);
-            }
+                    SettingsTab::Battery => {
+                        if battery_view::show(
+                            ui,
+                            self.daemon_status.as_ref(),
+                            &mut self.config,
+                            &self.i18n,
+                        ) {
+                            self.persist_and_notify();
+                        }
+                    }
+                    SettingsTab::General => {
+                        if general_view::show(
+                            ui,
+                            &mut self.general_state,
+                            &mut self.config,
+                            &mut self.i18n,
+                        ) {
+                            self.persist_and_notify();
+                        }
+                    }
+                    SettingsTab::Wizard => {
+                        let daemon_status = self.daemon_status.as_ref();
+                        let action = wizard_view::show(
+                            ui,
+                            &mut self.wizard_state,
+                            &mut self.config,
+                            daemon_status,
+                            &self.i18n,
+                        );
+                        if action == wizard_view::WizardAction::Finished {
+                            self.persist_and_notify();
+                            self.current_tab = SettingsTab::Keyboard;
+                        }
+                    }
+                    SettingsTab::HardwareQa => {
+                        qa_view::show(ui, &mut self.qa_state, &self.i18n);
+                    }
+                    SettingsTab::Architecture => {
+                        self.architecture_state.ui(ui, &self.i18n);
+                    }
+                    SettingsTab::About => {
+                        about_view::show(ui, self.daemon_status.as_ref(), &self.i18n);
+                    }
+                });
         });
 
         // Request a repaint periodically to update battery/connection status
         ctx.request_repaint_after(Duration::from_millis(1500));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_compact_mode_threshold() {
+        assert!(is_compact_mode(849.0));
+        assert!(is_compact_mode(500.0));
+        assert!(is_compact_mode(0.0));
+        assert!(!is_compact_mode(850.0));
+        assert!(!is_compact_mode(1200.0));
+        assert!(!is_compact_mode(3840.0));
     }
 }

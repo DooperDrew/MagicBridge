@@ -96,8 +96,8 @@ pub fn show(
 ) -> Option<ConfigChange> {
     let mut change = None;
 
-    // 1. Profile Bar at the top (F7.7, F7.4)
-    ui.horizontal(|ui| {
+    // 1. Profile Bar at the top (F7.7, F7.4, Issue #14: horizontal wrapping)
+    ui.horizontal_wrapped(|ui| {
         ui.label(i18n.t("profile.label"));
 
         // Active profile dropdown
@@ -196,8 +196,8 @@ pub fn show(
 
     ui.separator();
 
-    // 2. Toolbar: Layer Switch, Presets, "Press a key to select"
-    ui.horizontal(|ui| {
+    // 2. Toolbar: Layer Switch, Presets, "Press a key to select" (Issue #14: horizontal wrapping)
+    ui.horizontal_wrapped(|ui| {
         ui.label(i18n.t("keyboard.layer"));
         ui.selectable_value(
             &mut state.active_layer,
@@ -255,13 +255,13 @@ pub fn show(
             state.editor.selected_key_id = None;
         }
 
+        ui.separator();
+
         // Color legend indicators
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            ui.colored_label(Color32::from_rgb(180, 100, 40), "■");
-            ui.label(i18n.t("keyboard.legend_fn_trigger"));
-            ui.colored_label(Color32::from_rgb(45, 125, 210), "■");
-            ui.label(i18n.t("keyboard.legend_remapped"));
-        });
+        ui.colored_label(Color32::from_rgb(45, 125, 210), "■");
+        ui.label(i18n.t("keyboard.legend_remapped"));
+        ui.colored_label(Color32::from_rgb(180, 100, 40), "■");
+        ui.label(i18n.t("keyboard.legend_fn_trigger"));
     });
 
     // Handle "Press a key to select" keyboard listener
@@ -323,6 +323,39 @@ pub enum ConfigChange {
     ProfileDeleted(String),
 }
 
+/// Dynamically calculates keyboard unit size in points based on available width.
+///
+/// Follows Issue #14 responsive layout: `(available_width / 24.5).clamp(20.0, 42.0)`.
+#[must_use]
+pub fn calculate_unit_size(available_width: f32) -> f32 {
+    (available_width / 24.5).clamp(20.0, 42.0)
+}
+
+/// Dynamically calculates key font size in points based on unit size, key width, cluster, and label length.
+#[must_use]
+pub fn calculate_key_font_size(
+    unit_size: f32,
+    key_width: f32,
+    cluster: KeyCluster,
+    label_len: usize,
+) -> f32 {
+    if key_width >= 1.5 {
+        if label_len > 6 {
+            (unit_size * 0.28).clamp(7.0, 12.5)
+        } else {
+            (unit_size * 0.34).clamp(8.0, 14.5)
+        }
+    } else if cluster == KeyCluster::Main && label_len <= 2 {
+        (unit_size * 0.38).clamp(8.5, 16.0)
+    } else if label_len <= 3 {
+        (unit_size * 0.32).clamp(7.5, 13.5)
+    } else if label_len <= 5 {
+        (unit_size * 0.26).clamp(6.5, 11.5)
+    } else {
+        (unit_size * 0.22).clamp(6.0, 10.0)
+    }
+}
+
 /// Renders the visual A1843 keyboard grid to scale.
 fn render_visual_keyboard(
     ui: &mut Ui,
@@ -333,31 +366,52 @@ fn render_visual_keyboard(
 ) -> Option<String> {
     let mut clicked_key_id = None;
 
-    // Compute key unit size based on available width (A1843 is ~23 units wide)
+    // Dynamically calculate unit_size based on available width (Issue #14)
     let available_width = ui.available_width();
-    let total_units_x = 23.5f32;
-    let unit_size = (available_width / total_units_x).clamp(24.0, 34.0);
-    let key_height = unit_size * 0.95;
-    let key_spacing = 2.0;
+    let unit_size = calculate_unit_size(available_width);
+
+    // Dynamically scale key height, spacing, and font sizes
+    let key_height = (unit_size * 0.95).round();
+    let key_spacing = (unit_size * 0.055).clamp(1.0, 2.5);
+
+    let keyboard_total_width = (23.0 * (unit_size + key_spacing)) + unit_size;
+    let total_height = (6.0 * (key_height + key_spacing)) + 8.0;
+
+    // Center keyboard horizontally if available width exceeds total keyboard width
+    let margin_x = ((available_width - keyboard_total_width) / 2.0).max(4.0);
+    let margin_y = 4.0;
 
     let (rect, _response) = ui.allocate_exact_size(
-        Vec2::new(available_width, (6.0 * (key_height + key_spacing)) + 8.0),
+        Vec2::new(available_width, total_height),
         Sense::click_and_drag(),
     );
 
     let painter = ui.painter_at(rect);
 
-    // Draw keyboard base plate
+    // Draw keyboard aluminum base plate (centered with bezel)
+    let plate_rect = Rect::from_min_size(
+        egui::pos2(rect.left() + margin_x - 4.0, rect.top()),
+        Vec2::new(keyboard_total_width + 8.0, total_height),
+    );
     painter.rect_filled(
-        rect,
+        plate_rect,
         CornerRadius::same(6),
         Color32::from_rgb(235, 237, 240),
     );
+    painter.rect_stroke(
+        plate_rect,
+        CornerRadius::same(6),
+        Stroke::new(1.0_f32, Color32::from_rgb(215, 218, 222)),
+        egui::StrokeKind::Inside,
+    );
+
+    // Dynamic corner radius for keys based on unit size
+    let key_corner_radius = ((unit_size * 0.1).round() as u8).clamp(2, 4);
 
     // Draw each physical key
     for key in &state.model.keys {
-        let key_x = rect.left() + (key.x * (unit_size + key_spacing)) + 4.0;
-        let key_y = rect.top() + (key.row as f32 * (key_height + key_spacing)) + 4.0;
+        let key_x = rect.left() + margin_x + (key.x * (unit_size + key_spacing));
+        let key_y = rect.top() + margin_y + (key.row as f32 * (key_height + key_spacing));
         let key_w = (key.width * unit_size) + ((key.width - 1.0) * key_spacing);
         let key_h = (key.height * key_height) + ((key.height - 1.0) * key_spacing);
 
@@ -427,7 +481,7 @@ fn render_visual_keyboard(
 
         painter.rect(
             key_rect,
-            CornerRadius::same(3),
+            CornerRadius::same(key_corner_radius),
             fill_color,
             Stroke::new(stroke_width, stroke_color),
             egui::StrokeKind::Inside,
@@ -443,11 +497,8 @@ fn render_visual_keyboard(
             Color32::from_rgb(40, 45, 50)
         };
 
-        let font_size = if key.width >= 1.5 || key.cluster == KeyCluster::Main && label.len() <= 2 {
-            11.0
-        } else {
-            9.5
-        };
+        let font_size =
+            calculate_key_font_size(unit_size, key.width, key.cluster, label.chars().count());
 
         painter.text(
             key_rect.center(),
@@ -510,6 +561,8 @@ fn render_key_editor(
     i18n: &I18n,
 ) -> Option<ConfigChange> {
     let mut change = None;
+    let available_width = ui.available_width();
+    let is_compact = available_width < 850.0;
 
     ui.group(|ui| {
         ui.heading(i18n.t("editor.title"));
@@ -519,7 +572,7 @@ fn render_key_editor(
             let physical = state.model.find_by_id(&key_id);
             let vk = physical.map(|p| p.vk).unwrap_or(0);
 
-            ui.horizontal(|ui| {
+            ui.horizontal_wrapped(|ui| {
                 ui.label(format!("{} {}", i18n.t("editor.selected_key"), key_id));
                 ui.label(format!("({} 0x{:02X})", i18n.t("editor.original_vk"), vk));
                 ui.label(format!(
@@ -532,8 +585,10 @@ fn render_key_editor(
                 ));
             });
 
-            // Action type selector
-            ui.horizontal(|ui| {
+            ui.add_space(2.0);
+
+            // Action type selector (wrapped for responsive adaptation)
+            ui.horizontal_wrapped(|ui| {
                 ui.label(i18n.t("editor.action_type"));
                 ui.selectable_value(
                     &mut state.editor.action_type_idx,
@@ -562,184 +617,215 @@ fn render_key_editor(
                 );
             });
 
-            // Action parameters based on type
-            match state.editor.action_type_idx {
-                0 => {
-                    // Remap Key (target key)
-                    ui.horizontal(|ui| {
-                        ui.label(i18n.t("editor.target_key"));
-                        let targets = [
-                            "PrintScreen",
-                            "ScrollLock",
-                            "Pause",
-                            "Insert",
-                            "Delete",
-                            "Home",
-                            "End",
-                            "PageUp",
-                            "PageDown",
-                            "Left",
-                            "Right",
-                            "Up",
-                            "Down",
-                            "F1",
-                            "F2",
-                            "F3",
-                            "F4",
-                            "F5",
-                            "F6",
-                            "F7",
-                            "F8",
-                            "F9",
-                            "F10",
-                            "F11",
-                            "F12",
-                            "F13",
-                            "F14",
-                            "F15",
-                            "F16",
-                            "F17",
-                            "F18",
-                            "F19",
-                            "LeftControl",
-                            "RightControl",
-                            "LeftOption",
-                            "RightOption",
-                            "LeftCommand",
-                            "RightCommand",
-                            "Escape",
-                            "Backspace",
-                            "Tab",
-                            "Space",
-                        ];
+            ui.add_space(4.0);
 
-                        egui::ComboBox::from_id_salt("target_key_combo")
-                            .selected_text(&state.editor.target_key_name)
-                            .show_ui(ui, |ui| {
-                                for t in targets {
-                                    ui.selectable_value(
-                                        &mut state.editor.target_key_name,
-                                        t.to_string(),
-                                        t,
-                                    );
-                                }
-                            });
-                        ui.text_edit_singleline(&mut state.editor.target_key_name);
-                    });
-                }
-                1 => {
-                    // Media Action
-                    ui.horizontal(|ui| {
-                        ui.label(i18n.t("editor.media_command"));
-                        let media_ops = [
-                            ("volume_up", "Volume Up"),
-                            ("volume_down", "Volume Down"),
-                            ("volume_mute", "Mute"),
-                            ("play_pause", "Play / Pause"),
-                            ("next_track", "Next Track"),
-                            ("prev_track", "Previous Track"),
-                            ("stop", "Stop"),
-                        ];
-                        egui::ComboBox::from_id_salt("media_combo")
-                            .selected_text(&state.editor.media_command)
-                            .show_ui(ui, |ui| {
-                                for (cmd, desc) in media_ops {
-                                    ui.selectable_value(
-                                        &mut state.editor.media_command,
-                                        cmd.to_string(),
-                                        desc,
-                                    );
-                                }
-                            });
-                    });
-                }
-                2 => {
-                    // Launch Program
-                    ui.horizontal(|ui| {
-                        ui.label(i18n.t("editor.command"));
-                        ui.text_edit_singleline(&mut state.editor.launch_command);
-                    });
-                }
-                3 => {
-                    // Open URL
-                    ui.horizontal(|ui| {
-                        ui.label(i18n.t("editor.url"));
-                        ui.text_edit_singleline(&mut state.editor.url_target);
-                    });
-                }
-                4 => {
-                    // Send Shortcut
-                    ui.horizontal(|ui| {
-                        ui.label(i18n.t("editor.shortcut_keys"));
-                        ui.text_edit_singleline(&mut state.editor.shortcut_keys);
-                    });
-                }
-                _ => {}
+            if is_compact {
+                // Stacked layout when available width is restricted (<850px)
+                ui.horizontal_wrapped(|ui| {
+                    render_editor_parameters(ui, &mut state.editor, i18n);
+                });
+                ui.add_space(4.0);
+                ui.horizontal_wrapped(|ui| {
+                    if let Some(c) = render_editor_buttons(
+                        ui,
+                        &state.editor,
+                        state.active_layer,
+                        config,
+                        &key_id,
+                        i18n,
+                    ) {
+                        change = Some(c);
+                    }
+                });
+            } else {
+                // Side-by-side layout when width is ample (>=850px)
+                ui.horizontal(|ui| {
+                    render_editor_parameters(ui, &mut state.editor, i18n);
+                    ui.separator();
+                    if let Some(c) = render_editor_buttons(
+                        ui,
+                        &state.editor,
+                        state.active_layer,
+                        config,
+                        &key_id,
+                        i18n,
+                    ) {
+                        change = Some(c);
+                    }
+                });
             }
-
-            ui.horizontal(|ui| {
-                // Apply button
-                if ui.button(i18n.t("editor.save_mapping")).clicked() {
-                    let action = match state.editor.action_type_idx {
-                        0 => Some(KeyAction::Key(
-                            state.editor.target_key_name.trim().to_string(),
-                        )),
-                        1 => Some(KeyAction::Custom(CustomAction::Media {
-                            command: state.editor.media_command.clone(),
-                        })),
-                        2 => Some(KeyAction::Custom(CustomAction::Launch {
-                            command: state.editor.launch_command.trim().to_string(),
-                        })),
-                        3 => Some(KeyAction::Custom(CustomAction::OpenUrl {
-                            url: state.editor.url_target.trim().to_string(),
-                        })),
-                        4 => {
-                            let keys = state
-                                .editor
-                                .shortcut_keys
-                                .split('+')
-                                .map(|s| s.trim().to_string())
-                                .filter(|s| !s.is_empty())
-                                .collect();
-                            Some(KeyAction::Custom(CustomAction::Shortcut { keys }))
-                        }
-                        _ => None,
-                    };
-
-                    if let Some(act) = action
-                        && let Some(profile) = config.active_profile_mut()
-                    {
-                        match state.active_layer {
-                            ActiveLayer::Normal => {
-                                profile.mappings.insert(key_id.clone(), act);
-                            }
-                            ActiveLayer::Fn => {
-                                profile.fn_mappings.insert(key_id.clone(), act);
-                            }
-                        }
-                        change = Some(ConfigChange::Modified);
-                    }
-                }
-
-                // Reset key to default button
-                if ui.button(i18n.t("editor.reset_key")).clicked()
-                    && let Some(profile) = config.active_profile_mut()
-                {
-                    match state.active_layer {
-                        ActiveLayer::Normal => {
-                            profile.mappings.remove(&key_id);
-                        }
-                        ActiveLayer::Fn => {
-                            profile.fn_mappings.remove(&key_id);
-                        }
-                    }
-                    change = Some(ConfigChange::Modified);
-                }
-            });
         } else {
             ui.label(i18n.t("editor.no_selection"));
         }
     });
+
+    change
+}
+
+/// Helper to render the parameters for the currently selected action type.
+fn render_editor_parameters(ui: &mut Ui, editor: &mut KeyEditorState, i18n: &I18n) {
+    match editor.action_type_idx {
+        0 => {
+            // Remap Key (target key)
+            ui.label(i18n.t("editor.target_key"));
+            let targets = [
+                "PrintScreen",
+                "ScrollLock",
+                "Pause",
+                "Insert",
+                "Delete",
+                "Home",
+                "End",
+                "PageUp",
+                "PageDown",
+                "Left",
+                "Right",
+                "Up",
+                "Down",
+                "F1",
+                "F2",
+                "F3",
+                "F4",
+                "F5",
+                "F6",
+                "F7",
+                "F8",
+                "F9",
+                "F10",
+                "F11",
+                "F12",
+                "F13",
+                "F14",
+                "F15",
+                "F16",
+                "F17",
+                "F18",
+                "F19",
+                "LeftControl",
+                "RightControl",
+                "LeftOption",
+                "RightOption",
+                "LeftCommand",
+                "RightCommand",
+                "Escape",
+                "Backspace",
+                "Tab",
+                "Space",
+            ];
+
+            egui::ComboBox::from_id_salt("target_key_combo")
+                .selected_text(&editor.target_key_name)
+                .show_ui(ui, |ui| {
+                    for t in targets {
+                        ui.selectable_value(&mut editor.target_key_name, t.to_string(), t);
+                    }
+                });
+            ui.add(egui::TextEdit::singleline(&mut editor.target_key_name).desired_width(120.0));
+        }
+        1 => {
+            // Media Action
+            ui.label(i18n.t("editor.media_command"));
+            let media_ops = [
+                ("volume_up", "Volume Up"),
+                ("volume_down", "Volume Down"),
+                ("volume_mute", "Mute"),
+                ("play_pause", "Play / Pause"),
+                ("next_track", "Next Track"),
+                ("prev_track", "Previous Track"),
+                ("stop", "Stop"),
+            ];
+            egui::ComboBox::from_id_salt("media_combo")
+                .selected_text(&editor.media_command)
+                .show_ui(ui, |ui| {
+                    for (cmd, desc) in media_ops {
+                        ui.selectable_value(&mut editor.media_command, cmd.to_string(), desc);
+                    }
+                });
+        }
+        2 => {
+            // Launch Program
+            ui.label(i18n.t("editor.command"));
+            ui.add(egui::TextEdit::singleline(&mut editor.launch_command).desired_width(260.0));
+        }
+        3 => {
+            // Open URL
+            ui.label(i18n.t("editor.url"));
+            ui.add(egui::TextEdit::singleline(&mut editor.url_target).desired_width(260.0));
+        }
+        4 => {
+            // Send Shortcut
+            ui.label(i18n.t("editor.shortcut_keys"));
+            ui.add(egui::TextEdit::singleline(&mut editor.shortcut_keys).desired_width(180.0));
+        }
+        _ => {}
+    }
+}
+
+/// Helper to render the Save and Reset buttons for the key editor.
+fn render_editor_buttons(
+    ui: &mut Ui,
+    editor: &KeyEditorState,
+    layer: ActiveLayer,
+    config: &mut Config,
+    key_id: &str,
+    i18n: &I18n,
+) -> Option<ConfigChange> {
+    let mut change = None;
+
+    // Apply button
+    if ui.button(i18n.t("editor.save_mapping")).clicked() {
+        let action = match editor.action_type_idx {
+            0 => Some(KeyAction::Key(editor.target_key_name.trim().to_string())),
+            1 => Some(KeyAction::Custom(CustomAction::Media {
+                command: editor.media_command.clone(),
+            })),
+            2 => Some(KeyAction::Custom(CustomAction::Launch {
+                command: editor.launch_command.trim().to_string(),
+            })),
+            3 => Some(KeyAction::Custom(CustomAction::OpenUrl {
+                url: editor.url_target.trim().to_string(),
+            })),
+            4 => {
+                let keys = editor
+                    .shortcut_keys
+                    .split('+')
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect();
+                Some(KeyAction::Custom(CustomAction::Shortcut { keys }))
+            }
+            _ => None,
+        };
+
+        if let Some(act) = action
+            && let Some(profile) = config.active_profile_mut()
+        {
+            match layer {
+                ActiveLayer::Normal => {
+                    profile.mappings.insert(key_id.to_string(), act);
+                }
+                ActiveLayer::Fn => {
+                    profile.fn_mappings.insert(key_id.to_string(), act);
+                }
+            }
+            change = Some(ConfigChange::Modified);
+        }
+    }
+
+    // Reset key to default button
+    if ui.button(i18n.t("editor.reset_key")).clicked()
+        && let Some(profile) = config.active_profile_mut()
+    {
+        match layer {
+            ActiveLayer::Normal => {
+                profile.mappings.remove(key_id);
+            }
+            ActiveLayer::Fn => {
+                profile.fn_mappings.remove(key_id);
+            }
+        }
+        change = Some(ConfigChange::Modified);
+    }
 
     change
 }
@@ -1019,5 +1105,38 @@ mod tests {
 
         let key = find_matching_physical_key(egui::Key::Space, &model).expect("Space found");
         assert_eq!(key.id, "Space");
+    }
+
+    #[test]
+    fn test_calculate_unit_size_responsive_clamping() {
+        // Narrow/compact display: clamped to 20.0 minimum
+        assert_eq!(calculate_unit_size(400.0), 20.0);
+        assert_eq!(calculate_unit_size(480.0), 20.0);
+
+        // Standard 1080p window width (~735px -> 30.0)
+        let standard_unit = calculate_unit_size(735.0);
+        assert!((standard_unit - 30.0).abs() < 0.01);
+
+        // Wide display: 1200px -> clamped to 42.0 maximum
+        assert_eq!(calculate_unit_size(1200.0), 42.0);
+        // 4K Ultra-wide: clamped to 42.0 maximum
+        assert_eq!(calculate_unit_size(3840.0), 42.0);
+    }
+
+    #[test]
+    fn test_calculate_key_font_size_scaling() {
+        // Compact unit_size = 20.0
+        let compact_main = calculate_key_font_size(20.0, 1.0, KeyCluster::Main, 1);
+        assert!((8.5..=16.0).contains(&compact_main));
+
+        let compact_mod = calculate_key_font_size(20.0, 1.5, KeyCluster::Main, 7);
+        assert!((7.0..=12.5).contains(&compact_mod));
+
+        // 4K unit_size = 42.0
+        let ultra_main = calculate_key_font_size(42.0, 1.0, KeyCluster::Main, 1);
+        assert!(ultra_main >= 15.0);
+
+        let ultra_mod = calculate_key_font_size(42.0, 1.5, KeyCluster::Main, 4);
+        assert!(ultra_mod >= 13.0);
     }
 }

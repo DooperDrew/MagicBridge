@@ -134,6 +134,11 @@ impl SettingsIpc {
         std::thread::sleep(Duration::from_millis(200));
         Ok(())
     }
+
+    /// Alias for `launch_agent`.
+    pub fn start_agent() -> Result<(), String> {
+        Self::launch_agent()
+    }
 }
 
 #[cfg(test)]
