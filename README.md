@@ -1,4 +1,4 @@
-﻿<div align="center">
+<div align="center">
 
 # MagicBridge ⌨️ 🌉
 
@@ -11,16 +11,10 @@
 [![0% Idle CPU](https://img.shields.io/badge/idle%20CPU-0%25-success.svg)](#performance--safety-budgets)
 [![Anti-Cheat Safe](https://img.shields.io/badge/anti--cheat-safe%20(no%20drivers)-success.svg)](#core-philosophy)
 
-[Problem](#the-problem) •
-[Features](#key-features) •
-[Architecture](#architecture-overview) •
-[User Guide](docs/user-guide.md) •
-[Release Guide](docs/release-methodology.md) •
-[Community Strategy](docs/08-community-and-growth-strategy.md) •
-[Multi-Agent Guide](docs/multi-agent-methodology.md) •
-[Building & Running](#building--running) •
-[Roadmap](#roadmap--milestones) •
-[Contributing](#contributing)
+<br/>
+
+| 📖 [User Guide](docs/user-guide.md) | 🪄 [Setup Wizard](scripts/setup-wizard.ps1) | 🧪 [Hardware QA](docs/06-qa-and-validation.md) | 📦 [WinGet & Releases](docs/release-methodology.md) | 🤝 [Community Plan](docs/08-community-and-growth-strategy.md) | 🤖 [Architecture](docs/multi-agent-methodology.md) |
+|:---:|:---:|:---:|:---:|:---:|:---:|
 
 </div>
 
