@@ -1,0 +1,66 @@
+name: Bug Report
+description: Report a defect, unexpected behavior, or crash in MagicBridge
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report an issue! MagicBridge relies on low-level Win32 hooks and HID reports for the Apple A1843 keyboard. Detailed hardware info helps us reproduce and fix issues quickly.
+  - type: input
+    id: os_version
+    attributes:
+      label: Windows Version & Architecture
+      description: e.g. Windows 10 Pro 22H2 x64 or Windows 11 23H2 x64
+      placeholder: Windows 10 22H2 64-bit
+    validations:
+      required: true
+  - type: dropdown
+    id: connection_type
+    attributes:
+      label: Keyboard Connection
+      description: How is your Apple Magic Keyboard A1843 currently connected?
+      options:
+        - "Bluetooth Classic"
+        - "Lightning-to-USB Cable"
+        - "Both (switching dynamically)"
+    validations:
+      required: true
+  - type: dropdown
+    id: keyboard_layout
+    attributes:
+      label: Physical Keyboard Layout
+      description: Which physical layout does your A1843 keyboard have?
+      options:
+        - "ISO Italian"
+        - "ANSI US"
+        - "ISO UK"
+        - "ISO German"
+        - "ISO French"
+        - "Other / Custom"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the Bug
+      description: A clear and concise description of what went wrong.
+      placeholder: When pressing Right Option as Fn with Left Arrow, Home is not triggered...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Exact steps to reproduce the behavior.
+      placeholder: |
+        1. Open Notepad
+        2. Press Right Option + Left Arrow
+        3. Cursor does not jump to the start of the line
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Probe or Debug Log Output (Optional)
+      description: Paste any output from `cargo run -p hid-probe -- dump` or agent console logs if available.
+      render: text

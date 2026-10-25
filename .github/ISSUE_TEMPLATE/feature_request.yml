@@ -1,0 +1,26 @@
+name: Feature Request
+description: Suggest an idea, new mapping preset, or improvement for MagicBridge
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea or a specific layout mapping you'd like to see supported? Let us know!
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is your feature request related to a problem?
+      description: A clear and concise description of the limitation or workflow problem.
+      placeholder: I frequently switch between Italian and English layouts, and...
+  - type: textarea
+    id: solution
+    attributes:
+      label: Describe the Solution You'd Like
+      description: A clear and concise description of what you want to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives You've Considered
+      description: Any alternative solutions or workarounds you've tried.
