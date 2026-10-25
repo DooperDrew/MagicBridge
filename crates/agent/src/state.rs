@@ -1,11 +1,12 @@
 //! Daemon state management (config, remapping status, battery, active profile).
 
-use magicbridge_core::{Config, TopRowMode};
+use crate::ipc::DaemonStatus;
+use magicbridge_core::{CompiledMappingTable, Config, TopRowMode};
 use std::collections::HashSet;
 use std::path::PathBuf;
 
 /// Runtime daemon state.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DaemonState {
     /// Active configuration and profiles.
     pub config: Config,
@@ -162,7 +163,34 @@ impl DaemonState {
         }
     }
 
-    fn save_config(&self) {
+    /// Compiles the currently active profile into an immutable [`CompiledMappingTable`].
+    #[must_use]
+    pub fn compile_active_profile(&self) -> CompiledMappingTable {
+        if let Some(profile) = self.config.active_profile() {
+            magicbridge_core::compile_profile(profile)
+        } else {
+            CompiledMappingTable::default()
+        }
+    }
+
+    /// Returns a snapshot of daemon status for IPC or UI queries.
+    #[must_use]
+    pub fn status(&self) -> DaemonStatus {
+        DaemonStatus {
+            agent_running: true,
+            connected_keyboards: self.connected_devices.len(),
+            is_connected: self.is_connected,
+            transport: self.transport_name.clone(),
+            battery_percent: self.battery_percent,
+            active_profile: self.active_profile_name().to_string(),
+            top_row_mode: self.active_top_row_mode(),
+            enabled: self.enabled,
+            paused: !self.enabled,
+        }
+    }
+
+    /// Persists configuration to disk if a config path is configured.
+    pub fn save_config(&self) {
         if let Some(ref path) = self.config_path {
             let _ = self.config.save_to_path(path);
         }
@@ -317,5 +345,29 @@ mod tests {
         assert!(!state.is_connected);
         assert_eq!(state.transport_name, None);
         assert_eq!(state.connected_devices.len(), 0);
+    }
+
+    #[test]
+    fn daemon_state_compile_profile_and_status() {
+        let config = Config::default();
+        let mut state = DaemonState::new(config, None);
+        state.is_connected = true;
+        state.transport_name = Some("Bluetooth".to_string());
+        state.battery_percent = Some(88);
+
+        // Compile table
+        let table = state.compile_active_profile();
+        assert_eq!(table.fn_vk(), Some(magicbridge_core::VK_RMENU));
+
+        // Status snapshot
+        let status = state.status();
+        assert!(status.agent_running);
+        assert!(status.is_connected);
+        assert_eq!(status.transport.as_deref(), Some("Bluetooth"));
+        assert_eq!(status.battery_percent, Some(88));
+        assert_eq!(status.active_profile, "Default (IT)");
+        assert_eq!(status.top_row_mode, TopRowMode::MediaKeysFirst);
+        assert!(status.enabled);
+        assert!(!status.paused);
     }
 }

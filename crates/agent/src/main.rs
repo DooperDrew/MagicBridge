@@ -1,20 +1,26 @@
 //! MagicBridge background agent (always running, tiny).
 //!
 //! Daemon runtime shell, single-instance mutex, hidden Win32 message window,
-//! and system tray icon with context menu (Milestone 1.1).
+//! low-level keyboard hook, and system tray icon with context menu.
 
 // No console window in release builds; keep it in debug for diagnostics.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+pub mod autostart;
 pub mod device_notify;
+pub mod hook;
+pub mod injector;
+pub mod ipc;
 pub mod single_instance;
 pub mod state;
 pub mod tray;
 pub mod window;
 
+use ipc::{AtomicMappingTable, IpcServer};
 use magicbridge_core::Config;
 use single_instance::{SingleInstanceError, SingleInstanceGuard};
 use state::DaemonState;
+use std::sync::{Arc, Mutex};
 use window::{MessageWindow, run_message_pump};
 
 fn main() {
@@ -38,11 +44,15 @@ fn main() {
         None => Config::default(),
     };
 
-    // 3. Initialize daemon state.
+    // 3. Initialize daemon state and atomic mapping table (Milestone 2.1 & 2.5).
     let state = DaemonState::new(config, config_path);
+    let table = state.compile_active_profile();
+    hook::set_active_table(table.clone());
+    let atomic_table = AtomicMappingTable::new(table);
+    let shared_state = Arc::new(Mutex::new(state.clone()));
 
     // 4. Create hidden Win32 message window & system tray icon.
-    let _window = match MessageWindow::create(state) {
+    let window = match MessageWindow::create(state) {
         Ok(w) => w,
         Err(e) => {
             eprintln!("Failed to create background message window: {e}");
@@ -50,7 +60,20 @@ fn main() {
         }
     };
 
-    // 5. Run Win32 message pump (event-driven, 0% idle CPU per NFR-P2).
+    // 5. Start Named Pipe IPC server (\\.\pipe\MagicBridge_Agent_IPC).
+    let _ipc_server = match IpcServer::start_default(
+        shared_state,
+        atomic_table,
+        Some(ipc::NotifyHwnd(window.hwnd())),
+    ) {
+        Ok(srv) => Some(srv),
+        Err(e) => {
+            eprintln!("[MagicBridge] Warning: failed to start Named Pipe IPC server: {e}");
+            None
+        }
+    };
+
+    // 6. Run Win32 message pump (event-driven, 0% idle CPU per NFR-P2).
     let exit_code = run_message_pump();
     if exit_code != 0 {
         std::process::exit(exit_code);

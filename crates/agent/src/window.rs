@@ -20,6 +20,7 @@ use crate::device_notify::{
     DeviceNotificationHandle, is_apple_keyboard_path, parse_device_interface_path,
     probe_connected_apple_keyboards,
 };
+use crate::hook::HookHandle;
 use crate::state::DaemonState;
 use crate::tray::{
     IDM_OPEN_SETTINGS, IDM_PROFILE_BASE, IDM_QUIT, IDM_START_WITH_WINDOWS, IDM_TOGGLE_ENABLED,
@@ -42,6 +43,42 @@ struct WindowData {
     tray: Option<TrayIcon>,
     device_notify: Option<DeviceNotificationHandle>,
     taskbar_created_msg: u32,
+    hook: Option<HookHandle>,
+}
+
+impl WindowData {
+    /// Synchronizes the compiled mapping table with the active profile.
+    fn recompile_active_table(&self) {
+        if let Some(profile) = self.state.config.active_profile() {
+            let table = magicbridge_core::compile_profile(profile);
+            crate::hook::set_active_table(table);
+        }
+    }
+
+    /// Updates the hook active state based on connection and enabled status.
+    ///
+    /// Per NFR-S2, remapping is active while an Apple keyboard is connected
+    /// and automatically paused when none is connected.
+    fn update_hook_state(&mut self) {
+        let should_be_active = self.state.enabled && self.state.is_connected;
+        if should_be_active {
+            if self.hook.is_none() {
+                match HookHandle::install() {
+                    Ok(h) => {
+                        self.hook = Some(h);
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to install keyboard hook: {e}");
+                    }
+                }
+            } else if let Some(ref h) = self.hook {
+                h.set_active(true);
+            }
+        } else if let Some(h) = self.hook.take() {
+            // Drop unhooks and releases any active synthetic keys (NFR-S3).
+            drop(h);
+        }
+    }
 }
 
 /// Hidden Win32 message window.
@@ -89,6 +126,7 @@ impl MessageWindow {
             tray: None,
             device_notify: None,
             taskbar_created_msg,
+            hook: None,
         });
         let raw_ptr = Box::into_raw(window_data);
 
@@ -178,7 +216,11 @@ unsafe extern "system" fn wnd_proc(
             let devices = probe_connected_apple_keyboards();
             data.state.sync_connected_devices(&devices);
 
-            // 2. Register for device interface arrival/removal notifications (F8.4, NFR-S2).
+            // 2. Synchronize active mapping table and update hook state (NFR-S2).
+            data.recompile_active_table();
+            data.update_hook_state();
+
+            // 3. Register for device interface arrival/removal notifications (F8.4, NFR-S2).
             match DeviceNotificationHandle::register_for_device_interface(
                 hwnd,
                 &GUID_DEVINTERFACE_HID,
@@ -187,7 +229,7 @@ unsafe extern "system" fn wnd_proc(
                 Err(e) => eprintln!("Failed to register for device notifications: {e}"),
             }
 
-            // 3. Initialize system tray icon with current status.
+            // 4. Initialize system tray icon with current status.
             match TrayIcon::create(hwnd, &data.state) {
                 Ok(tray) => data.tray = Some(tray),
                 Err(e) => eprintln!("Failed to initialize system tray icon: {e}"),
@@ -207,6 +249,7 @@ unsafe extern "system" fn wnd_proc(
                             "[MagicBridge] Apple keyboard connected ({transport_str}): {path}"
                         );
                         data.state.on_device_arrival(&path, &transport_str);
+                        data.update_hook_state();
                         if let Some(ref tray) = data.tray {
                             tray.update_tooltip(&data.state);
                         }
@@ -224,6 +267,7 @@ unsafe extern "system" fn wnd_proc(
                             let devices = probe_connected_apple_keyboards();
                             data.state.sync_connected_devices(&devices);
                         }
+                        data.update_hook_state();
                         if let Some(ref tray) = data.tray {
                             tray.update_tooltip(&data.state);
                         }
@@ -238,6 +282,9 @@ unsafe extern "system" fn wnd_proc(
             match event {
                 PBT_APMSUSPEND => {
                     println!("[MagicBridge] Power broadcast: system entering suspend / sleep");
+                    if let Some(ref h) = data.hook {
+                        h.set_active(false);
+                    }
                 }
                 PBT_APMRESUMEAUTOMATIC | PBT_APMRESUMESUSPEND => {
                     println!(
@@ -245,6 +292,7 @@ unsafe extern "system" fn wnd_proc(
                     );
                     let devices = probe_connected_apple_keyboards();
                     data.state.sync_connected_devices(&devices);
+                    data.update_hook_state();
                     if let Some(ref tray) = data.tray {
                         tray.update_tooltip(&data.state);
                     }
@@ -268,23 +316,34 @@ unsafe extern "system" fn wnd_proc(
             }
             LRESULT(0)
         }
+        crate::ipc::WM_IPC_STATE_UPDATED => {
+            data.recompile_active_table();
+            data.update_hook_state();
+            if let Some(ref tray) = data.tray {
+                tray.update_tooltip(&data.state);
+            }
+            LRESULT(0)
+        }
         WM_COMMAND => {
             let cmd_id = wparam.0 & 0xFFFF;
             match cmd_id {
                 IDM_TOGGLE_ENABLED => {
                     data.state.toggle_enabled();
+                    data.update_hook_state();
                     if let Some(ref tray) = data.tray {
                         tray.update_tooltip(&data.state);
                     }
                 }
                 IDM_TOPROW_MEDIA_FIRST => {
                     data.state.set_top_row_mode(TopRowMode::MediaKeysFirst);
+                    data.recompile_active_table();
                     if let Some(ref tray) = data.tray {
                         tray.update_tooltip(&data.state);
                     }
                 }
                 IDM_TOPROW_FKEYS_FIRST => {
                     data.state.set_top_row_mode(TopRowMode::FKeysFirst);
+                    data.recompile_active_table();
                     if let Some(ref tray) = data.tray {
                         tray.update_tooltip(&data.state);
                     }
@@ -304,6 +363,7 @@ unsafe extern "system" fn wnd_proc(
                     let profiles = data.state.profile_names();
                     if let Some(name) = profiles.get(idx) {
                         data.state.set_active_profile(name);
+                        data.recompile_active_table();
                         if let Some(ref tray) = data.tray {
                             tray.update_tooltip(&data.state);
                         }
@@ -314,7 +374,8 @@ unsafe extern "system" fn wnd_proc(
             LRESULT(0)
         }
         WM_DESTROY => {
-            // Clean up device notification registration and tray icon before window is gone.
+            // Clean up device notification registration, hook, and tray icon before window is gone.
+            data.hook.take();
             data.device_notify.take();
             data.tray.take();
             // SAFETY: PostQuitMessage posts WM_QUIT to exit message loop cleanly.

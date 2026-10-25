@@ -30,11 +30,11 @@ Goal: learn exactly what the A1843 sends on Windows, over USB and Bluetooth.
 
 ## M2 — Remapping engine
 - [x] `[T1]` M2.1 `core` mapping engine: key model, layers, profile compilation to precomputed lookup table, unit tests. _(2026-10-25 — M2.1 completed)_
-- [ ] `[T3]` M2.2 `WH_KEYBOARD_LL` hook + `SendInput` output with self-injection marker; pass-through fast path + ISO `AltGr` (`sc=0x21D`) suppression.
-- [ ] `[T2]` M2.3 Modifier presets (Windows/Mac layout) and per-key remap.
-- [ ] `[T1]` M2.4 Missing-key defaults (F13→PrtSc, F14→ScrLk, F15→Pause).
-- [ ] `[T3]` M2.5 Pause hotkey + tray Enable/Profile toggle; atomic config/profile hot-swap.
-**Exit:** remaps work in Notepad, browser, and one game; no stuck keys after rapid typing or killing the agent.
+- [x] `[T3]` M2.2 `WH_KEYBOARD_LL` hook + `SendInput` output with self-injection marker; pass-through fast path + ISO `AltGr` (`sc=0x21D`) suppression. _(2026-10-25 — M2.2 completed)_
+- [x] `[T2]` M2.3 Modifier presets (Windows/Mac layout) and per-key remap. _(2026-10-25 — M2.3 completed via M2.1 & M2.2)_
+- [x] `[T1]` M2.4 Missing-key defaults (F13→PrtSc, F14→ScrLk, F15→Pause). _(2026-10-25 — M2.4 completed via M2.1 & M2.2)_
+- [x] `[T3]` M2.5 Pause hotkey + tray Enable/Profile toggle; atomic config/profile hot-swap. _(2026-10-25 — M2.5 completed)_
+**Exit:** remaps work in Notepad, browser, and one game; no stuck keys after rapid typing or killing the agent. — **MILESTONE 2 COMPLETE ✅**
 
 ## M3 — Fn layer & top row
 - [ ] `[T3]` M3.1 Configurable Fn key per `hardware-findings.md` (default Right Option / `VK_RMENU`).

@@ -4,7 +4,24 @@ All development steps, hardware discoveries, architectural decisions, and commit
 
 ---
 
-## 2026-10-25 — Milestone 2: Remapping Engine (In Progress)
+## 2026-10-25 — Milestone 2: Remapping Engine (Completed ✅)
+
+### M2.2 & M2.5 — Low-Level Hook, SendInput Injector, AltGr Suppression & Named Pipe IPC
+- Implemented `crates/agent/src/hook.rs`:
+  - `WH_KEYBOARD_LL` low-level hook procedure operating with zero heap allocation, zero disk/file I/O, and zero mutex locks (`NFR-P3`).
+  - Fast-path for non-remapped keys passing directly to `CallNextHookEx`.
+  - Evaluates `dwExtraInfo == MAGICBRIDGE_EXTRA_INFO` (`0x4D424745`) to prevent self-injection loops.
+  - Automatically swallows fake Windows `VK_LCONTROL` with `scanCode == 0x21D` when Right Option is remapped or acts as Fn (`hardware-findings §4.1`).
+  - Lock-free `[AtomicU32; 256]` active key state tracker; `release_all_active_keys` releases any active synthetic keys on pause/disable/sleep/exit to guarantee zero stuck keys (`NFR-S3`).
+- Implemented `crates/agent/src/injector.rs`:
+  - Thin `SendInput` wrapper tagging synthetic keystrokes with `MAGICBRIDGE_EXTRA_INFO` sentinel.
+- Implemented `crates/agent/src/ipc.rs`:
+  - `AtomicMappingTable`: Lock-free table swapping built on `arc_swap::ArcSwap<CompiledMappingTable>`.
+  - Named Pipe IPC server listening on `\\.\pipe\MagicBridge_Agent_IPC`.
+  - Request/response protocol supporting `Reload`, `SwitchProfile`, `GetStatus`, and `Pause`.
+  - Lightweight `IpcClient` with end-to-end integration tests.
+- Verified modifier presets (Windows layout Cmd<->Alt, Option<->Win) and missing key defaults (`F13`->`PrintScreen`, `F14`->`ScrollLock`, `F15`->`Pause`) across the hook pipeline (M2.3, M2.4).
+- Subagents: `T3-Hook-M2.2` (inherit/pro) and `T2-IPC-M2.5` (flash/sonnet) running in parallel.
 
 ### M2.1 — Pure Remapping Engine in `crates/core`
 - Implemented core key models, layer definitions, and zero-allocation precomputed lookup table in `crates/core`:
