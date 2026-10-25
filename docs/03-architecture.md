@@ -42,6 +42,10 @@ crates/
 ├── settings/   # GUI exe: egui app, visual keyboard, i18n.
 └── hid-probe/  # Milestone 0 diagnostic CLI: dumps raw HID reports from the keyboard.
 ```
+Package names: `magicbridge-core`, `magicbridge-agent`, `magicbridge-settings`, `hid-probe`. The core package
+can't be called just `core` because that would clash with Rust's built-in `core` library.
+Workspace lints deny `unsafe_op_in_unsafe_fn` and `clippy::undocumented_unsafe_blocks`, so every `unsafe` block
+needs a `// SAFETY:` comment. `magicbridge-core` also uses `#![forbid(unsafe_code)]`.
 
 ## Key technical design
 

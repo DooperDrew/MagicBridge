@@ -1,0 +1,18 @@
+[package]
+name = "hid-probe"
+description = "Milestone 0 diagnostic CLI: enumerates Apple HID devices and dumps raw reports."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "hid-probe"
+path = "src/main.rs"
+
+# The `windows` crate is added in M0.2.
+[dependencies]
+magicbridge-core.workspace = true
+
+[lints]
+workspace = true

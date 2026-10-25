@@ -35,4 +35,20 @@ settings GUI.
 - User-facing strings go through the i18n files (`en.toml`, `it.toml`). No hardcoded UI text.
 
 ## Build & run
-_To be filled in during M0.1 (exact commands for build, test, run agent, run settings, run hid-probe)._
+Prerequisites: Rust stable `x86_64-pc-windows-msvc` (pinned via `rust-toolchain.toml`, with `clippy` + `rustfmt`)
+and Visual Studio (Build Tools) with the C++ workload. Run everything from the repo root.
+
+| Purpose | Command |
+|---|---|
+| Build (debug) | `cargo build --workspace` |
+| Build (release) | `cargo build --workspace --release` → `target\release\*.exe` |
+| Test | `cargo test --workspace` |
+| Format check | `cargo fmt --all -- --check` |
+| Lint | `cargo clippy --workspace --all-targets -- -D warnings` |
+| Run agent | `cargo run -p magicbridge-agent` |
+| Run settings | `cargo run -p magicbridge-settings` |
+| Run hid-probe | `cargo run -p hid-probe -- <args>` |
+
+Package names: the `crates/core` package is `magicbridge-core` (Rust name `magicbridge_core`), because
+a crate named `core` would clash with Rust's built-in `core` library. Release builds of the agent and settings use the
+Windows GUI subsystem (no console); debug builds keep the console for diagnostics.

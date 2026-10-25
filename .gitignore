@@ -22,5 +22,8 @@ venv/
 dist/
 build/
 
+# Rust
+target/
+
 # Logs
 *.log

@@ -1,0 +1,17 @@
+[package]
+name = "magicbridge-agent"
+description = "MagicBridge background agent: hook, HID reader, tray, IPC server."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "magicbridge-agent"
+path = "src/main.rs"
+
+[dependencies]
+magicbridge-core.workspace = true
+
+[lints]
+workspace = true

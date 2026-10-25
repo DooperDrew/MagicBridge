@@ -1,0 +1,27 @@
+[workspace]
+resolver = "3"
+members = ["crates/core", "crates/agent", "crates/settings", "crates/hid-probe"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+publish = false
+
+[workspace.dependencies]
+magicbridge-core = { path = "crates/core" }
+
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+
+[workspace.lints.clippy]
+# Every `unsafe` block must carry a `// SAFETY:` comment (see AGENTS.md).
+undocumented_unsafe_blocks = "deny"
+
+# Release profile tuned for size and steady latency (03-architecture.md, NFR-P4).
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
