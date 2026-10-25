@@ -22,9 +22,12 @@ All development steps, hardware discoveries, architectural decisions, and commit
 2. **Automated Agent Task Issue Templates:**
    - Authored `.github/ISSUE_TEMPLATE/agent_task.md` (markdown template) and `.github/ISSUE_TEMPLATE/agent_task.yml` (interactive GitHub form) allowing the user or Lead Agent to quickly prepare bounded, context-rich implementation tasks for AI coding agents with explicit file ownership, invariants, and acceptance criteria.
 3. **Multi-Agent Methodology Extension (`docs/multi-agent-methodology.md`):**
-   - Added Section 7 detailing the hybrid local + cloud multi-agent lifecycle with Mermaid interaction diagrams and role contracts.
-4. **Governance Alignment:**
+   - Added Section 7 detailing the hybrid local + cloud multi-agent lifecycle with Mermaid interaction flowchart and sequence diagrams.
+4. **Governance Alignment & Documentation Centralization:**
    - Updated `AGENTS.md` and `README.md` to formally document GitHub Copilot Agent as a supported cloud worker class.
+   - Hardened `.github/pull_request_template.md` with Agent task options, requirement tracking, and Sole Committer checklist.
+   - Updated `CONTRIBUTING.md` with multi-agent branch conventions and task handoff lifecycle.
+   - Created centralized documentation hub `docs/README.md` cataloging the specification hierarchy, reading order, and 16-document inventory.
 
 ---
 

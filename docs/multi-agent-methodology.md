@@ -299,6 +299,32 @@ flowchart TD
     MERGE --> GITHUB_MAIN[("GitHub main & Releases")]
 ```
 
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Product Owner
+    participant Lead as Lead Agent (Antigravity)
+    participant GH as GitHub (Issues / PRs)
+    participant Copilot as GitHub Copilot Agent
+    
+    User->>Lead: "Implement feature X from roadmap"
+    Lead->>Lead: Decompose into bounded task + complexity tier
+    Lead->>GH: Create Issue using agent_task.yml (assign files & invariants)
+    GH->>Copilot: Trigger Copilot Agent on Issue
+    Copilot->>Copilot: Read .github/copilot-instructions.md & codebase
+    Copilot->>Copilot: Implement code + unit tests in task branch
+    Copilot->>GH: Open Draft PR (task/<issue-id>-<desc>)
+    GH->>Lead: Draft PR ready for review
+    Lead->>Lead: Pull branch locally & run Verification Gate
+    alt Tests Pass & Budgets Met
+        Lead->>GH: Merge PR to main & close Issue
+        Lead->>Lead: Update docs/05-roadmap.md & CHANGELOG.md
+    else Regressions Detected
+        Lead->>Lead: Refine code locally or comment on PR
+        Lead->>GH: Push verified commit & merge
+    end
+```
+
 ### Division of Roles:
 | Role | **Lead Agent (Antigravity)** | **GitHub Copilot (Agent & IDE)** |
 |---|---|---|
