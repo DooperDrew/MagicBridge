@@ -118,7 +118,7 @@ Before writing or modifying any code, the agent MUST read:
 - **Safety Documentation:** Every `unsafe` block in Win32 wrappers MUST be accompanied by a clear `// SAFETY:` explanatory comment detailing preconditions and invariants.
 - **No Hardcoded UI Strings:** All user-facing text belongs in translation files (`locales/en.toml`, `locales/it.toml`).
 - **Windows / PowerShell Hygiene:**
-  - When writing files from PowerShell, always force UTF-8 (`Set-Content -Encoding utf8` / `Out-File -Encoding utf8`). Prefer dedicated file-writing tools over shell redirection.
+  - When writing files from PowerShell, always force UTF-8 without BOM (`[System.IO.File]::WriteAllText(..., [System.Text.UTF8Encoding]::new($false))` or `Set-Content -Encoding utf8`) and set `[Console]::OutputEncoding = [System.Text.Encoding]::UTF8` before capturing external CLI stdout (`gh`, `git`). Prefer dedicated file-writing tools over shell redirection.
   - Use `;` instead of `&&` for command chaining in PowerShell 5.
   - Scope file searches strictly to the project workspace; never run unconstrained recursive searches over `.cargo`, `target`, or dependency caches.
 
@@ -150,6 +150,7 @@ Once the task is validated:
 5. **Git Cleanliness:** Built binaries or packages (`dist/*.zip`, `.msi`) MUST NEVER be committed to git. Release assets are attached exclusively to GitHub Releases.
 6. **Git Commit & Push:** Commit with an informative message (e.g. `M2.3: modifier presets and per-key remap`) and push to `origin main`.
 7. **Update GitHub Issue / Milestone:** Update or close the corresponding GitHub Issue using `gh issue close <id>` or `gh issue edit`.
+8. **GitHub Governance (Milestones, Issues & Releases):** Every roadmap milestone (`M0`..`Mn`) MUST map 1:1 to a GitHub Milestone and tracked GitHub Issues (`agent_task.yml` for Copilot/worker tasks). Completed tasks close their issue with a commit/release reference; pending hardware/manual QA stays open in its milestone. Every release milestone MUST publish a pre-built downloadable archive (`.zip` / installer) to GitHub Releases (`gh release create`) even while physical hardware QA remains `Pending`.
 
 ---
 

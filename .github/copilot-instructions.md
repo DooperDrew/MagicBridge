@@ -110,11 +110,16 @@ MagicBridge is specifically calibrated for the **Apple Magic Keyboard with Numer
 
 ## 5. Verification Commands & Environment Hygiene
 
-### Toolchain PATH Resiliency (Windows):
+### Toolchain PATH Resiliency & PowerShell Hygiene (Windows):
 Never assume `cargo` is present in subshell `$env:PATH`. In PowerShell, always execute:
 ```powershell
 $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User') + ";$env:USERPROFILE\.cargo\bin"
 ```
+When writing files or executing CLI commands via PowerShell:
+- Force UTF-8 without BOM: `[System.IO.File]::WriteAllText(..., [System.Text.UTF8Encoding]::new($false))` or `Set-Content -Encoding utf8`.
+- Set console output encoding before capturing CLI stdout (`gh`, `git`): `[Console]::OutputEncoding = [System.Text.Encoding]::UTF8`.
+- Scope file searches strictly to the workspace; never recurse into dependency caches (`target/`, `.cargo/`).
+- Use `;` instead of `&&` for command chaining in PowerShell 5.
 
 ### Verification Gate (Must Pass 100% Locally):
 Before submitting a Draft PR or marking a task complete, run:
