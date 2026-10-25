@@ -17,37 +17,37 @@ Goal: learn exactly what the A1843 sends on Windows, over USB and Bluetooth.
 **Exit:** Fn detection approach decided (native or fallback), battery approach decided, device-filtering approach decided.
 
 ## M1 — Agent skeleton
-- [ ] M1.1 Tray icon + menu (Enable, Open settings, Quit), single-instance mutex, hidden message window.
-- [ ] M1.2 Config schema in `core` + TOML load/save with defaults; config path in `%APPDATA%`.
+- [ ] M1.1 Tray icon + menu (Enable, Profile submenu, Open settings, Quit), single-instance mutex, hidden message window.
+- [ ] M1.2 Config schema in `core` (with named profiles & multiple language layouts) + TOML load/save with defaults; config path in `%APPDATA%`.
 - [ ] M1.3 Autostart toggle (HKCU Run key).
 - [ ] M1.4 Device arrival/removal and sleep/resume handling.
 **Exit:** agent idles at 0% CPU and ≤ 5 MB RAM with tray working.
 
 ## M2 — Remapping engine
-- [ ] M2.1 `core` mapping engine: key model, layers, precomputed lookup table, unit tests.
-- [ ] M2.2 `WH_KEYBOARD_LL` hook + `SendInput` output with self-injection marker; pass-through fast path.
+- [ ] M2.1 `core` mapping engine: key model, layers, profile compilation to precomputed lookup table, unit tests.
+- [ ] M2.2 `WH_KEYBOARD_LL` hook + `SendInput` output with self-injection marker; pass-through fast path + ISO `AltGr` (`sc=0x21D`) suppression.
 - [ ] M2.3 Modifier presets (Windows/Mac layout) and per-key remap.
 - [ ] M2.4 Missing-key defaults (F13→PrtSc, F14→ScrLk, F15→Pause).
-- [ ] M2.5 Pause hotkey + tray Enable toggle; atomic config hot-swap.
+- [ ] M2.5 Pause hotkey + tray Enable/Profile toggle; atomic config/profile hot-swap.
 **Exit:** remaps work in Notepad, browser, and one game; no stuck keys after rapid typing or killing the agent.
 
 ## M3 — Fn layer & top row
-- [ ] M3.1 Fn detection per `hardware-findings.md` (or fallback key).
+- [ ] M3.1 Configurable Fn key per `hardware-findings.md` (default Right Option / `VK_RMENU`).
 - [ ] M3.2 Fn combos (arrows, Backspace, Enter).
 - [ ] M3.3 Top-row Media-first / F-keys-first modes + tray toggle.
 - [ ] M3.4 Task View / Start for F3/F4; brightness best effort (Could).
 
 ## M4 — Custom actions & battery
 - [ ] M4.1 Actions: key combo, launch program/URL, media action. Executed off the hook thread.
-- [ ] M4.2 Battery reading + tray tooltip + low-battery notification.
+- [ ] M4.2 Battery reading (`0xFF00:0x0014` report `0x90` + PnP fallback) + tray tooltip + low-battery notification.
 
 ## M5 — Settings GUI
 - [ ] M5.1 `settings` app shell (eframe), tabs, named-pipe client, "agent not running" banner.
-- [ ] M5.2 Visual A1843 keyboard widget (ANSI + ISO), Normal/Fn layers, highlight remapped keys.
-- [ ] M5.3 Key editor side panel + presets + "press a key to select".
+- [ ] M5.2 Visual A1843 keyboard widget (multiple language layouts: ANSI US, ISO IT/UK/DE/FR + custom labels), Normal/Fn layers, highlight remapped keys.
+- [ ] M5.3 Key editor side panel + profile manager (create/duplicate/rename/delete) + presets + "press a key to select".
 - [ ] M5.4 Top row / Battery / General / About tabs.
 - [ ] M5.5 i18n (English, Italian) + language switch.
-- [ ] M5.6 Import/export config.
+- [ ] M5.6 Import/export config and profiles.
 
 ## M6 — Hardening & performance verification
 - [ ] M6.1 Measure and document NFR-P1…P5 (RAM, idle CPU, hook latency, binary size).

@@ -15,8 +15,13 @@ settings GUI.
 7. `docs/decisions/`: ADRs. Don't contradict them without proposing a new ADR.
 
 ## Workflow
-- One roadmap task per conversation unless told otherwise. Before writing code, restate the task and its acceptance criteria.
-- When done: tick the box in `docs/05-roadmap.md`, update docs if the design changed, and commit with a message like `M2.3: modifier presets`.
+- Before writing code, restate the task and its acceptance criteria.
+- When a task or milestone step is done:
+  1. Tick the box in `docs/05-roadmap.md`.
+  2. Log the step, technical details, and decisions in `CHANGELOG.md`.
+  3. Update docs if the design changed.
+  4. Commit with a clear message (e.g. `M2.3: modifier presets`) and push to `origin` on GitHub (`https://github.com/DooperDrew/test-repo-antigravity`).
+  5. Update/close the corresponding GitHub Issue via `gh issue`.
 - If reality contradicts the docs (especially 🔬 items), **stop and tell the user**, then update the docs once they agree.
 - Hardware behaviour can't be guessed. When something depends on the physical keyboard, write a probe or test and ask the user to run it.
 

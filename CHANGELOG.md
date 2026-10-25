@@ -1,0 +1,41 @@
+# Development & Knowledge Log (`CHANGELOG.md`)
+
+All development steps, hardware discoveries, architectural decisions, and commits are logged here in chronological order for future reference.
+
+---
+
+## 2026-10-25 — Milestone 0: Hardware Spike 🔬 (Completed)
+
+### M0.1 — Cargo Workspace Skeleton (`4935fbf`)
+- Created Cargo workspace (`resolver = "3"`, Rust 2024 edition) with 4 crates:
+  - `crates/core` (`magicbridge-core`): pure business logic, `#![forbid(unsafe_code)]`, zero Win32 dependencies.
+  - `crates/agent` (`magicbridge-agent`): background tray/hook/HID agent executable.
+  - `crates/settings` (`magicbridge-settings`): `egui`/`eframe` settings GUI executable.
+  - `crates/hid-probe` (`hid-probe`): diagnostic CLI for Milestone 0 hardware probing.
+- Configured size/latency-tuned release profile (`opt-level = "z"`, `lto = true`, `codegen-units = 1`, `panic = "abort"`, `strip = true`) and workspace lints (`unsafe_op_in_unsafe_fn = "deny"`, `clippy::undocumented_unsafe_blocks = "deny"`).
+
+### M0.2 & M0.3 — `hid-probe` Implementation (`fb1cc69`)
+- Added `magicbridge_core::device::parse_hid_path` to extract transport (`USB`, `Bluetooth`, `BluetoothLe`), `VID`, `PID`, USB interface (`MI_xx`), and top-level collection (`Colxx`) from Windows HID paths, with unit tests.
+- Implemented `hid-probe list`, `hid-probe dump` (simultaneous `WH_KEYBOARD_LL`, `WM_INPUT` `RIM_TYPEKEYBOARD` / `RIM_TYPEHID`, and direct `ReadFile` threads with microsecond QPC timestamps and Hook↔Raw Input pairing), and `hid-probe battery`.
+
+### M0.4, M0.5, M0.6, M0.7 — Physical A1843 Hardware Findings (`ae17257`, `ac95648`)
+- **Dual Vendor IDs (`0x05AC` on USB, `0x004C` on Bluetooth):**
+  - Over USB, the A1843 reports `VID = 0x05AC` (USB-IF Apple Inc.), `PID = 0x026C`, rev `0x0852`.
+  - Over Bluetooth Classic (`{00001124-0000-1000-8000-00805f9b34fb}`), the A1843 reports **`VID = 0x004C`** (Bluetooth SIG Apple Inc., `VID&0001004c`), `PID = 0x026C`.
+  - Updated `magicbridge_core::is_apple_vendor` to match both `0x05AC` and `0x004C`.
+- **Why Physical `Fn` (`0x00FF:0x0003`) and `Eject` (`0x000C:0x00B8`) Are Blocked in User Mode:**
+  - Both usages are declared inside Input Report `0x01` (10B) of the main `0x0001:0x0006` (Generic Desktop / Keyboard) collection (`MI_01&Col01` on USB, `Col01` on Bluetooth).
+  - Windows `kbdhid.sys` opens `0x0001:0x0006` collections exclusively (`ERROR_ACCESS_DENIED`) and strips non-`0x07` usages in kernel mode before `WH_KEYBOARD_LL` or `WM_INPUT`.
+  - **Decision:** Use the configurable Fn key approach (`F1.1` / `F1.4`, default Right Option / `VK_RMENU`) in user mode rather than a kernel filter driver (`NFR-S1`).
+- **ISO / Italian `AltGr` Quirk (`scanCode = 0x21D`):**
+  - Pressing Right Option (`VK_RMENU`, `vk=0xA5`, `sc=0x38`, `ext=1`) on an Italian/ISO layout causes Windows to synthesize a fake `VK_LCONTROL` (`vk=0xA2`, `sc=0x21D`, `ext=0`) ~0.8 ms earlier. The M2 hook must swallow `sc=0x21D` whenever `VK_RMENU` is remapped.
+- **`Clear` Key:**
+  - Sends `VK_NUMLOCK` (`vk=0x90`, `sc=0x45`, `ext=1`).
+- **Battery Reporting (`0xFF00:0x0014`, Report `0x90`):**
+  - Works identically on both USB (`MI_00&Col02`) and Bluetooth (`Col02`) via `HidD_GetInputReport(0x90)` (3 bytes: `[0x90, status_flags, percentage]`). Observed `90 01 64` (100%, charging) on USB and `90 00 64` (100%, on battery) on Bluetooth.
+- **Device Filtering Timing:**
+  - `WH_KEYBOARD_LL` always fires **0.28–2.41 ms before** `WM_INPUT` (`RAWKB`). Per-keystroke device filtering inside `WH_KEYBOARD_LL` is therefore impossible without blocking; presence-based activation (active while an Apple `0x05AC`/`0x004C` keyboard is connected) is used.
+
+### Scope & Workflow Alignment — Profiles, Multi-Language Layouts & GitHub Tracking
+- Added requirement **F7.7** for **named profiles** and **multiple language/physical keyboard layouts** (`ISO Italian`, `ANSI US`, `ISO UK`, `ISO German`, `ISO French`, plus custom labels), switchable from the tray menu, GUI, or hotkey.
+- Made the GitHub repository (`DooperDrew/test-repo-antigravity`) public, added `CHANGELOG.md`, and created GitHub Issues for all milestones (`M0`–`M7`).

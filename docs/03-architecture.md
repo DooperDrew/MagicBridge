@@ -70,10 +70,10 @@ needs a `// SAFETY:` comment. `magicbridge-core` also uses `#![forbid(unsafe_cod
 - A kernel filter driver (e.g. Interception) is **explicitly rejected**: it needs admin rights, is risky, and can be flagged by anti-cheat software.
 
 ### Config & IPC
-- `config.toml` is the single source of truth. The GUI writes it atomically (temp file + rename).
-- The agent reloads on a **named pipe** message from the GUI (no file polling), and builds a new
+- `config.toml` is the single source of truth. It stores global settings (UI language, autostart, battery polling, active profile name) and a map/list of **named profiles** (each containing its language/physical layout, modifier preset, Fn key, top-row mode, and per-key mappings). The GUI writes it atomically (temp file + rename).
+- The agent reloads on a **named pipe** message from the GUI (no file polling) or when the user switches profiles from the tray menu, and builds a new
   immutable mapping table that the hook picks up through an atomic pointer swap.
-- The named pipe also gives the GUI status info: connected/transport/battery/mode.
+- The named pipe also gives the GUI status info: connected/transport/battery/mode/active profile.
 
 ### Lifecycle
 - Autostart: `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` (no admin).

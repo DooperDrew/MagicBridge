@@ -54,13 +54,14 @@
 - F7.2 **Visual keyboard** (A1843 layout) where clicking a key shows/edits its mapping
   (normal layer and Fn layer).
 - F7.3 **UI language** selector: English and Italian at launch, with an extensible translation file format.
-- F7.4 **Physical layout** selector: ANSI (US) / ISO (e.g. Italian), so the visual keyboard matches the real one.
+- F7.4 **Physical & language layout** selector: supports multiple language layouts (`ANSI (US)`, `ISO (Italian)`, `ISO (UK)`, `ISO (German)`, `ISO (French)`, plus extensible/custom layout labels) so the visual keyboard matches the active layout.
 - F7.5 Changes apply **instantly** without restarting the background agent.
-- F7.6 Import/export the configuration as a file.
+- F7.6 Import/export the configuration (or individual profiles) as a file.
+- F7.7 **Named profiles (M):** Users can create, rename, duplicate, and delete multiple **profiles** (e.g. per language layout, work vs. gaming, or custom keymaps). Each profile holds its language/physical layout, modifier preset, top-row mode, Fn key choice, and normal/Fn key mappings. Switching profiles is instant from the GUI, tray menu, or an optional hotkey.
 
 ### F8 — System integration (M)
 - F8.1 Autostart with Windows (per-user, no admin), toggleable.
-- F8.2 Tray icon menu: Enable/Disable all remapping, Media/F-keys mode, Open settings, Quit.
+- F8.2 Tray icon menu: Enable/Disable all remapping, Profile submenu, Media/F-keys mode, Open settings, Quit.
 - F8.3 Only one instance runs at a time.
 - F8.4 Keeps working after sleep/resume, Bluetooth disconnect/reconnect, and USB ↔ Bluetooth switching.
 
