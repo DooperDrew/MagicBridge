@@ -6,6 +6,7 @@
 // No console window in release builds; keep it in debug for diagnostics.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+pub mod device_notify;
 pub mod single_instance;
 pub mod state;
 pub mod tray;

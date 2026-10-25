@@ -4,7 +4,28 @@ All development steps, hardware discoveries, architectural decisions, and commit
 
 ---
 
-## 2026-10-25 — Milestone 1: Agent Skeleton (In Progress)
+## 2026-10-25 — Milestone 2: Remapping Engine (In Progress)
+
+### M2.1 — Pure Remapping Engine in `crates/core`
+- Implemented core key models, layer definitions, and zero-allocation precomputed lookup table in `crates/core`:
+  - `key`: Windows Virtual Key constants (`VK_LWIN`, `VK_RMENU`, `VK_SNAPSHOT`, `VK_SCROLL`, `VK_PAUSE`, etc.), default scancodes, and `MAGICBRIDGE_EXTRA_INFO: usize = 0x4D424745` ("MBGE") self-injection prevention sentinel.
+  - `engine`: `CompiledMappingTable` with flat 256-element arrays for normal and Fn layers, supporting `PassThrough`, `RemapKey`, `CustomAction`, and `Swallow`.
+  - O(1) table lookup with zero heap allocations, zero locks, and zero I/O (`NFR-P3`).
+  - `compile_profile`: Compiles `NamedProfile` applying modifier presets (Windows layout 4-key swap vs. Mac layout), default missing keys (`F13`->`PrintScreen`, `F14`->`ScrollLock`, `F15`->`Pause`), top-row mode, and Fn combos (`Home`/`End`/`PgUp`/`PgDn`/`Del`/`Ins`).
+  - Automatic ISO Italian `AltGr` synthetic `LCtrl` (`sc=0x21D`) suppression whenever Right Option (`VK_RMENU`) is remapped or acts as the Fn key.
+  - Subagent: `T1-Engine-M2.1` running `flash`.
+
+---
+
+## 2026-10-25 — Milestone 1: Agent Skeleton (Completed ✅)
+
+### M1.4 — Device Arrival/Removal & Power Management
+- Implemented Windows hardware event and power management lifecycle in `crates/agent`:
+  - `device_notify`: RAII `DeviceNotificationHandle` registering `RegisterDeviceNotificationW` for `GUID_DEVINTERFACE_HID`.
+  - Filtered arrival (`DBT_DEVICEARRIVAL`) and removal (`DBT_DEVICEREMOVECOMPLETE`) notifications using `magicbridge_core::is_apple_vendor` (`0x05AC` on USB and `0x004C` over Bluetooth Classic).
+  - Tracked connected Apple keyboards with dynamic tray tooltip updates.
+  - Handled `WM_POWERBROADCAST` (`PBT_APMSUSPEND`, `PBT_APMRESUMEAUTOMATIC`, `PBT_APMRESUMESUSPEND`) to re-probe connected keyboards after system sleep/resume.
+  - Subagent: `T2-Device-M1.4` running `flash`.
 
 ### M1.1 — Daemon Shell, Single-Instance Mutex, Hidden Window & Tray Icon
 - Implemented background daemon runtime shell in `crates/agent`:

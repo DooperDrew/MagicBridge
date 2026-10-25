@@ -25,11 +25,11 @@ Goal: learn exactly what the A1843 sends on Windows, over USB and Bluetooth.
 - [x] `[T2]` M1.1 Tray icon + menu (Enable, Profile submenu, Open settings, Quit), single-instance mutex, hidden message window. _(2026-10-25 — M1.1 completed)_
 - [x] `[T1]` M1.2 Config schema in `core` (with named profiles & multiple language layouts) + TOML load/save with defaults; config path in `%APPDATA%`. _(2026-10-25 — M1.2 completed)_
 - [x] `[T2]` M1.3 Autostart toggle (HKCU Run key). _(2026-10-25 — M1.3 completed)_
-- [ ] `[T2]` M1.4 Device arrival/removal and sleep/resume handling.
-**Exit:** agent idles at 0% CPU and ≤ 5 MB RAM with tray working.
+- [x] `[T2]` M1.4 Device arrival/removal and sleep/resume handling. _(2026-10-25 — M1.4 completed)_
+**Exit:** agent idles at 0% CPU and ≤ 5 MB RAM with tray working. — **MILESTONE 1 COMPLETE ✅**
 
 ## M2 — Remapping engine
-- [ ] `[T1]` M2.1 `core` mapping engine: key model, layers, profile compilation to precomputed lookup table, unit tests.
+- [x] `[T1]` M2.1 `core` mapping engine: key model, layers, profile compilation to precomputed lookup table, unit tests. _(2026-10-25 — M2.1 completed)_
 - [ ] `[T3]` M2.2 `WH_KEYBOARD_LL` hook + `SendInput` output with self-injection marker; pass-through fast path + ISO `AltGr` (`sc=0x21D`) suppression.
 - [ ] `[T2]` M2.3 Modifier presets (Windows/Mac layout) and per-key remap.
 - [ ] `[T1]` M2.4 Missing-key defaults (F13→PrtSc, F14→ScrLk, F15→Pause).

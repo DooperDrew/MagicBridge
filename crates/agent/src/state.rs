@@ -1,6 +1,7 @@
 //! Daemon state management (config, remapping status, battery, active profile).
 
 use magicbridge_core::{Config, TopRowMode};
+use std::collections::HashSet;
 use std::path::PathBuf;
 
 /// Runtime daemon state.
@@ -18,6 +19,8 @@ pub struct DaemonState {
     pub is_connected: bool,
     /// Transport description ("USB", "Bluetooth", etc.).
     pub transport_name: Option<String>,
+    /// Tracked paths of currently connected Apple keyboard HID collections.
+    pub connected_devices: HashSet<String>,
 }
 
 impl DaemonState {
@@ -30,6 +33,47 @@ impl DaemonState {
             battery_percent: None,
             is_connected: false,
             transport_name: None,
+            connected_devices: HashSet::new(),
+        }
+    }
+
+    /// Records the arrival of an Apple keyboard interface.
+    ///
+    /// Returns `true` if the overall connection status transitioned from disconnected to connected.
+    pub fn on_device_arrival(&mut self, path: &str, transport: &str) -> bool {
+        let was_connected = self.is_connected;
+        self.connected_devices.insert(path.to_ascii_lowercase());
+        self.is_connected = true;
+        self.transport_name = Some(transport.to_string());
+        !was_connected
+    }
+
+    /// Records the removal of an Apple keyboard interface.
+    ///
+    /// Returns `true` if this device was tracked and all Apple keyboards are now disconnected.
+    pub fn on_device_removal(&mut self, path: &str) -> bool {
+        let was_connected = self.is_connected;
+        self.connected_devices.remove(&path.to_ascii_lowercase());
+        self.is_connected = !self.connected_devices.is_empty();
+        if !self.is_connected {
+            self.transport_name = None;
+            self.battery_percent = None;
+        }
+        was_connected && !self.is_connected
+    }
+
+    /// Synchronizes the connected state from a list of probed Apple keyboard devices.
+    pub fn sync_connected_devices(&mut self, devices: &[(String, String)]) {
+        self.connected_devices.clear();
+        let mut last_transport = None;
+        for (path, transport) in devices {
+            self.connected_devices.insert(path.to_ascii_lowercase());
+            last_transport = Some(transport.clone());
+        }
+        self.is_connected = !self.connected_devices.is_empty();
+        self.transport_name = last_transport;
+        if !self.is_connected {
+            self.battery_percent = None;
         }
     }
 
@@ -202,5 +246,76 @@ mod tests {
             tip3,
             "MagicBridge — Bluetooth — Battery 78% — Profile: Default (IT) — Media keys first"
         );
+    }
+
+    #[test]
+    fn daemon_state_device_arrival_and_removal() {
+        let config = Config::default();
+        let mut state = DaemonState::new(config, None);
+
+        let dev1 = r"\\?\hid#vid_05ac&pid_026c&mi_01&col01#8&2fa5df45&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030}";
+        let dev2 = r"\\?\hid#vid_05ac&pid_026c&mi_01&col02#8&2fa5df45&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030}";
+
+        // Initial state
+        assert!(!state.is_connected);
+        assert_eq!(state.transport_name, None);
+        assert_eq!(state.connected_devices.len(), 0);
+
+        // Arrival 1: transitions to connected
+        let transitioned = state.on_device_arrival(dev1, "USB");
+        assert!(transitioned);
+        assert!(state.is_connected);
+        assert_eq!(state.transport_name.as_deref(), Some("USB"));
+        assert_eq!(state.connected_devices.len(), 1);
+
+        // Arrival 2: same device collection, does not transition disconnected -> connected again
+        let transitioned2 = state.on_device_arrival(dev2, "USB");
+        assert!(!transitioned2);
+        assert!(state.is_connected);
+        assert_eq!(state.connected_devices.len(), 2);
+
+        // Removal 1: one remains, still connected
+        let disconnected = state.on_device_removal(dev1);
+        assert!(!disconnected);
+        assert!(state.is_connected);
+        assert_eq!(state.connected_devices.len(), 1);
+
+        // Removal 2: all removed, transitions to disconnected
+        let disconnected2 = state.on_device_removal(dev2);
+        assert!(disconnected2);
+        assert!(!state.is_connected);
+        assert_eq!(state.transport_name, None);
+        assert_eq!(state.battery_percent, None);
+        assert_eq!(state.connected_devices.len(), 0);
+    }
+
+    #[test]
+    fn daemon_state_sync_devices() {
+        let config = Config::default();
+        let mut state = DaemonState::new(config, None);
+
+        let devices = vec![
+            (
+                r"\\?\hid#vid_05ac&pid_026c&mi_01&col01#123#{4d1e55b2-f16f-11cf-88cb-001111000030}"
+                    .to_string(),
+                "USB".to_string(),
+            ),
+            (
+                r"\\?\hid#vid_05ac&pid_026c&mi_01&col02#123#{4d1e55b2-f16f-11cf-88cb-001111000030}"
+                    .to_string(),
+                "USB".to_string(),
+            ),
+        ];
+
+        state.sync_connected_devices(&devices);
+        assert!(state.is_connected);
+        assert_eq!(state.transport_name.as_deref(), Some("USB"));
+        assert_eq!(state.connected_devices.len(), 2);
+
+        // Sync with empty
+        state.sync_connected_devices(&[]);
+        assert!(!state.is_connected);
+        assert_eq!(state.transport_name, None);
+        assert_eq!(state.connected_devices.len(), 0);
     }
 }

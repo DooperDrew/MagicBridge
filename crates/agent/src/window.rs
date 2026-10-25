@@ -1,19 +1,25 @@
 //! Hidden Win32 message window and message pump (F8.2, NFR-P2).
 
+use windows::Win32::Devices::HumanInterfaceDevice::GUID_DEVINTERFACE_HID;
 use windows::Win32::Foundation::{
     ERROR_CLASS_ALREADY_EXISTS, GetLastError, HWND, LPARAM, LRESULT, WPARAM,
 };
 use windows::Win32::Graphics::Gdi::HBRUSH;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::WindowsAndMessaging::{
-    CREATESTRUCTW, CreateWindowExW, DefWindowProcW, DestroyWindow, DispatchMessageW, GWLP_USERDATA,
-    GetMessageW, GetWindowLongPtrW, HCURSOR, HICON, IsWindow, MSG, PostQuitMessage,
+    CREATESTRUCTW, CreateWindowExW, DBT_DEVICEARRIVAL, DBT_DEVICEREMOVECOMPLETE, DefWindowProcW,
+    DestroyWindow, DispatchMessageW, GWLP_USERDATA, GetMessageW, GetWindowLongPtrW, HCURSOR, HICON,
+    IsWindow, MSG, PBT_APMRESUMEAUTOMATIC, PBT_APMRESUMESUSPEND, PBT_APMSUSPEND, PostQuitMessage,
     RegisterClassExW, RegisterWindowMessageW, SetWindowLongPtrW, TranslateMessage, WINDOW_EX_STYLE,
-    WM_COMMAND, WM_CREATE, WM_DESTROY, WM_LBUTTONDBLCLK, WM_NCCREATE, WM_NCDESTROY, WM_RBUTTONUP,
-    WNDCLASS_STYLES, WNDCLASSEXW, WS_OVERLAPPED,
+    WM_COMMAND, WM_CREATE, WM_DESTROY, WM_DEVICECHANGE, WM_LBUTTONDBLCLK, WM_NCCREATE,
+    WM_NCDESTROY, WM_POWERBROADCAST, WM_RBUTTONUP, WNDCLASS_STYLES, WNDCLASSEXW, WS_OVERLAPPED,
 };
 use windows::core::{PCWSTR, w};
 
+use crate::device_notify::{
+    DeviceNotificationHandle, is_apple_keyboard_path, parse_device_interface_path,
+    probe_connected_apple_keyboards,
+};
 use crate::state::DaemonState;
 use crate::tray::{
     IDM_OPEN_SETTINGS, IDM_PROFILE_BASE, IDM_QUIT, IDM_START_WITH_WINDOWS, IDM_TOGGLE_ENABLED,
@@ -34,6 +40,7 @@ pub const WM_CONTEXTMENU_VAL: u32 = 0x007B;
 struct WindowData {
     state: DaemonState,
     tray: Option<TrayIcon>,
+    device_notify: Option<DeviceNotificationHandle>,
     taskbar_created_msg: u32,
 }
 
@@ -80,6 +87,7 @@ impl MessageWindow {
         let window_data = Box::new(WindowData {
             state,
             tray: None,
+            device_notify: None,
             taskbar_created_msg,
         });
         let raw_ptr = Box::into_raw(window_data);
@@ -166,11 +174,84 @@ unsafe extern "system" fn wnd_proc(
 
     match msg {
         WM_CREATE => {
+            // 1. Initial probe of connected Apple keyboards to populate state before tray creation.
+            let devices = probe_connected_apple_keyboards();
+            data.state.sync_connected_devices(&devices);
+
+            // 2. Register for device interface arrival/removal notifications (F8.4, NFR-S2).
+            match DeviceNotificationHandle::register_for_device_interface(
+                hwnd,
+                &GUID_DEVINTERFACE_HID,
+            ) {
+                Ok(notify) => data.device_notify = Some(notify),
+                Err(e) => eprintln!("Failed to register for device notifications: {e}"),
+            }
+
+            // 3. Initialize system tray icon with current status.
             match TrayIcon::create(hwnd, &data.state) {
                 Ok(tray) => data.tray = Some(tray),
                 Err(e) => eprintln!("Failed to initialize system tray icon: {e}"),
             }
             LRESULT(0)
+        }
+        WM_DEVICECHANGE => {
+            let event = wparam.0 as u32;
+            match event {
+                DBT_DEVICEARRIVAL => {
+                    if let Some(path) = parse_device_interface_path(lparam)
+                        && is_apple_keyboard_path(&path)
+                    {
+                        let info = magicbridge_core::device::parse_hid_path(&path);
+                        let transport_str = info.transport.to_string();
+                        println!(
+                            "[MagicBridge] Apple keyboard connected ({transport_str}): {path}"
+                        );
+                        data.state.on_device_arrival(&path, &transport_str);
+                        if let Some(ref tray) = data.tray {
+                            tray.update_tooltip(&data.state);
+                        }
+                    }
+                }
+                DBT_DEVICEREMOVECOMPLETE => {
+                    if let Some(path) = parse_device_interface_path(lparam)
+                        && is_apple_keyboard_path(&path)
+                    {
+                        println!("[MagicBridge] Apple keyboard disconnected: {path}");
+                        data.state.on_device_removal(&path);
+                        // If our tracked set became empty, re-probe present devices
+                        // in case another interface was not tracked or removed out of order.
+                        if !data.state.is_connected {
+                            let devices = probe_connected_apple_keyboards();
+                            data.state.sync_connected_devices(&devices);
+                        }
+                        if let Some(ref tray) = data.tray {
+                            tray.update_tooltip(&data.state);
+                        }
+                    }
+                }
+                _ => {}
+            }
+            LRESULT(1)
+        }
+        WM_POWERBROADCAST => {
+            let event = wparam.0 as u32;
+            match event {
+                PBT_APMSUSPEND => {
+                    println!("[MagicBridge] Power broadcast: system entering suspend / sleep");
+                }
+                PBT_APMRESUMEAUTOMATIC | PBT_APMRESUMESUSPEND => {
+                    println!(
+                        "[MagicBridge] Power broadcast: system resumed from suspend (event={event:#x})"
+                    );
+                    let devices = probe_connected_apple_keyboards();
+                    data.state.sync_connected_devices(&devices);
+                    if let Some(ref tray) = data.tray {
+                        tray.update_tooltip(&data.state);
+                    }
+                }
+                _ => {}
+            }
+            LRESULT(1)
         }
         WM_TRAY_CALLBACK => {
             let event = lparam.0 as u32;
@@ -233,7 +314,8 @@ unsafe extern "system" fn wnd_proc(
             LRESULT(0)
         }
         WM_DESTROY => {
-            // Drop tray icon before window is gone.
+            // Clean up device notification registration and tray icon before window is gone.
+            data.device_notify.take();
             data.tray.take();
             // SAFETY: PostQuitMessage posts WM_QUIT to exit message loop cleanly.
             unsafe {
@@ -311,6 +393,46 @@ mod tests {
         let window =
             MessageWindow::create(state).expect("Creating hidden message window should succeed");
         assert!(!window.hwnd().is_invalid());
+
+        drop(window);
+    }
+
+    #[test]
+    fn message_window_handles_power_broadcast_and_device_change() {
+        use windows::Win32::UI::WindowsAndMessaging::SendMessageW;
+
+        let config = Config::default();
+        let state = DaemonState::new(config, None);
+
+        let window =
+            MessageWindow::create(state).expect("Creating hidden message window should succeed");
+
+        // SAFETY: Sending test messages to our own hidden test window on this thread.
+        unsafe {
+            let res_suspend = SendMessageW(
+                window.hwnd(),
+                WM_POWERBROADCAST,
+                Some(WPARAM(PBT_APMSUSPEND as usize)),
+                Some(LPARAM(0)),
+            );
+            assert_eq!(res_suspend.0, 1);
+
+            let res_resume = SendMessageW(
+                window.hwnd(),
+                WM_POWERBROADCAST,
+                Some(WPARAM(PBT_APMRESUMEAUTOMATIC as usize)),
+                Some(LPARAM(0)),
+            );
+            assert_eq!(res_resume.0, 1);
+
+            let res_devchange = SendMessageW(
+                window.hwnd(),
+                WM_DEVICECHANGE,
+                Some(WPARAM(0)),
+                Some(LPARAM(0)),
+            );
+            assert_eq!(res_devchange.0, 1);
+        }
 
         drop(window);
     }
