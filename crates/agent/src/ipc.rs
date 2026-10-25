@@ -575,24 +575,45 @@ impl IpcServerHandle {
     /// Stops the IPC server thread cleanly and unblocks any waiting pipe connection.
     pub fn stop(&mut self) {
         if self.running.swap(false, Ordering::SeqCst) {
-            // Wake up ConnectNamedPipe by issuing a connection
             let wide: Vec<u16> = self
                 .pipe_name
                 .encode_utf16()
                 .chain(std::iter::once(0))
                 .collect();
-            // SAFETY: CreateFileW wakes up any pending ConnectNamedPipe so the server thread can observe running==false.
-            unsafe {
-                let _ = CreateFileW(
-                    PCWSTR(wide.as_ptr()),
-                    FILE_GENERIC_READ.0 | FILE_GENERIC_WRITE.0,
-                    FILE_SHARE_MODE(0),
-                    None,
-                    OPEN_EXISTING,
-                    FILE_FLAGS_AND_ATTRIBUTES(0),
-                    None,
-                );
+
+            let start = std::time::Instant::now();
+            // Retry waking up ConnectNamedPipe until the server thread terminates or timeout
+            while self
+                .thread_handle
+                .as_ref()
+                .map(|th| !th.is_finished())
+                .unwrap_or(false)
+            {
+                // SAFETY: CreateFileW wakes up any pending ConnectNamedPipe so the server thread can observe running==false.
+                let handle = unsafe {
+                    CreateFileW(
+                        PCWSTR(wide.as_ptr()),
+                        FILE_GENERIC_READ.0 | FILE_GENERIC_WRITE.0,
+                        FILE_SHARE_MODE(0),
+                        None,
+                        OPEN_EXISTING,
+                        FILE_FLAGS_AND_ATTRIBUTES(0),
+                        None,
+                    )
+                };
+                if let Ok(h) = handle {
+                    // SAFETY: Close temporary wakeup handle immediately.
+                    unsafe {
+                        let _ = CloseHandle(h);
+                    }
+                    break;
+                }
+                if start.elapsed() >= std::time::Duration::from_millis(2000) {
+                    break;
+                }
+                std::thread::sleep(std::time::Duration::from_millis(10));
             }
+
             if let Some(th) = self.thread_handle.take() {
                 let _ = th.join();
             }
