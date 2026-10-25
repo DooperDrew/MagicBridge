@@ -8,6 +8,8 @@ publish.workspace = true
 
 # NOTE: this crate must never depend on the `windows` crate (AGENTS.md, NFR-Q1).
 [dependencies]
+serde = { workspace = true, features = ["derive"] }
+toml = { workspace = true }
 
 [lints]
 workspace = true

@@ -4,6 +4,21 @@ All development steps, hardware discoveries, architectural decisions, and commit
 
 ---
 
+## 2026-10-25 — Milestone 1: Agent Skeleton (In Progress)
+
+### M1.2 — Config Schema in `crates/core`
+- Implemented complete configuration schema, named profiles, multi-language layout models, and TOML persistence in `magicbridge_core::config`:
+  - `Config`: global settings (`active_profile`, `autostart`, `battery_poll_minutes`, `low_battery_threshold_percent`, `ui_language`, `pause_hotkey`, `debug_logging`, and `profiles`).
+  - `NamedProfile`: encapsulates `name`, `layout: KeyboardLayout`, `modifier_preset: ModifierPreset`, `top_row_mode: TopRowMode`, `fn_key: FnKeyChoice`, `mappings: BTreeMap<String, KeyAction>`, and `fn_mappings: BTreeMap<String, KeyAction>`.
+  - Enums: `KeyboardLayout` (`IsoItalian`, `AnsiUs`, `IsoUk`, `IsoGerman`, `IsoFrench`, `Custom`), `ModifierPreset` (`WindowsLayout`, `MacLayout`, `Custom`), `TopRowMode` (`MediaKeysFirst`, `FKeysFirst`), and `FnKeyChoice` (`RightOption`, `RightControl`, `F19`, `Disabled`, `Other`).
+  - Sensible out-of-the-box defaults: generates a "Default (IT)" profile matching an Italian ISO keyboard with Windows layout modifiers (`Cmd`->`Alt`, `Option`->`Win`), Right Option as Fn trigger, Media keys first, default missing keys (`F13`->`PrintScreen`, `F14`->`ScrollLock`, `F15`->`Pause`), and standard Fn combos (`Left/Right`->`Home/End`, `Up/Down`->`PageUp/PageDown`, `Backspace`->`Delete`, `Enter`->`Insert`).
+  - Safe atomic file persistence via temporary file creation, data flushing (`sync_all()`), and atomic replacement.
+  - Resolved `%APPDATA%\MagicBridge\config.toml` path helpers.
+- Added 10 comprehensive unit tests covering serialization, round-trip parsing, custom profiles, duplication, deletion safety guards, and atomic writes.
+- Subagent: `T1-Core-M1` running token-efficient `flash` model. All local verification gates passed.
+
+---
+
 ## 2026-10-25 — Milestone 0: Hardware Spike 🔬 (Completed)
 
 ### M0.1 — Cargo Workspace Skeleton (`4935fbf`)

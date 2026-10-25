@@ -5,7 +5,13 @@
 
 #![forbid(unsafe_code)]
 
+pub mod config;
 pub mod device;
+
+pub use config::{
+    Config, ConfigError, CustomAction, FnKeyChoice, KeyAction, KeyboardLayout, ModifierPreset,
+    NamedProfile, TopRowMode, atomic_write, default_config_dir, default_config_path,
+};
 
 /// Apple Inc. USB vendor ID (USB-IF).
 pub const APPLE_VID: u16 = 0x05AC;
