@@ -4,6 +4,7 @@
 
 **A tiny, invisible, native Windows 10/11 utility that makes the Apple Magic Keyboard with Numeric Keypad (A1843) feel right at home on Windows.**
 
+[![Latest Release](https://img.shields.io/github/v/release/DooperDrew/test-repo-antigravity?logo=github&label=release%20v0.2.0)](https://github.com/DooperDrew/test-repo-antigravity/releases/latest)
 [![Rust Stable](https://img.shields.io/badge/rust-stable-brightgreen.svg)](https://www.rust-lang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform: Windows 10/11 x64](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-informational.svg)](https://microsoft.com/windows)

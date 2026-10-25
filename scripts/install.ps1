@@ -81,12 +81,12 @@ if (-not $SourceAgent) {
 $SourceDir = Split-Path -Parent $SourceAgent
 
 # Resolve version
-$Version = "0.1.0"
+$Version = "0.2.0"
 try {
     $verInfo = (Get-Item $SourceAgent).VersionInfo.ProductVersion
     if ($verInfo) { $Version = $verInfo.Trim() }
 } catch {}
-if ($Version -eq "0.1.0") {
+if ($Version -eq "0.2.0") {
     $CargoToml = Join-Path $ScriptDir "..\Cargo.toml"
     if (Test-Path $CargoToml) {
         $content = Get-Content $CargoToml -Raw

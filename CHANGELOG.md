@@ -4,7 +4,7 @@ All development steps, hardware discoveries, architectural decisions, and commit
 
 ---
 
-## 2026-10-25 — Phase 6: UX Onboarding, Responsive Settings & Hardware QA Tooling
+## 2026-10-25 — MagicBridge v0.2.0: UX Onboarding, Responsive Settings & Hardware QA Tooling (Release ✅)
 
 ### M10.1 — Guided Windows Installer Wizard (Completed ✅, closes #12)
 - Implemented rich graphical Windows setup wizard (`scripts/setup-wizard.ps1`) and Explorer double-click launcher (`scripts/setup.cmd`):
