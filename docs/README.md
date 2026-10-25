@@ -52,7 +52,7 @@ flowchart TD
 | [`multi-agent-methodology.md`](multi-agent-methodology.md) | **Multi-Agent Orchestration** | Hub-and-Spoke Lead/Worker model, Sole Committer Protocol, complexity tiers, GitHub Copilot cloud agent integration, and Draft PR workflows. |
 | [`model-fallback-log.md`](model-fallback-log.md) | **Model Routing & Quota Audit** | Audit log tracking tasks run on fallback or lower-tier models. |
 | [`release-methodology.md`](release-methodology.md) | **Release Engineering** | SemVer definitions, single source of version truth, release checklist, tagging procedure, and GitHub release automation. |
-| [`user-guide.md`](user-guide.md) | **End-User Documentation** | Complete user manual covering installation, Fn lock, modifier presets, custom actions, and troubleshooting. |
+| [`user-guide.md`](user-guide.md) | **End-User Documentation** | Complete user manual covering multi-channel installation (WinGet, Scoop, Setup Wizard, Portable ZIP), Fn lock, modifier presets, custom actions, and troubleshooting. |
 | [`decisions/`](decisions/) | **Architecture Decision Records (ADR)** | Lightweight records capturing context, options considered, and architectural rationale. |
 
 ---

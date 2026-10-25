@@ -47,22 +47,32 @@ MagicBridge fixes all of these issues while maintaining uncompromising system in
 - **Permissions:** Standard user account (no Administrator privileges required).
 - **Hardware:** Apple Magic Keyboard with Numeric Keypad (Model A1843), connected via Lightning-to-USB cable or Bluetooth.
 
-### Option A: Portable Run (No Installation)
-1. Download `MagicBridge-v<version>-windows-x64.zip` from the GitHub Releases page.
-2. Extract the archive into any folder of your choice (e.g. `C:\Tools\MagicBridge` or `%LOCALAPPDATA%\MagicBridge`).
-3. Double-click `magicbridge-agent.exe`.
-4. A keyboard icon will appear in your Windows System Tray (notification area next to the clock).
-5. Right-click the tray icon and select **Open Settings** (or launch `magicbridge-settings.exe`) to customize your layout.
+### Method 1: Microsoft WinGet (Recommended)
+Install directly using Windows Package Manager:
+```powershell
+# Install from official repository:
+winget install DooperDrew.MagicBridge
 
-### Option B: Guided Setup Wizard (Recommended)
+# Or install from local repo manifest:
+winget install --manifest packaging/winget/manifests/d/DooperDrew/MagicBridge/0.2.0/
+```
+
+### Method 2: Scoop Package Manager
+Install via Scoop for clean user-space installation and automatic environment handling:
+```powershell
+scoop install https://raw.githubusercontent.com/DooperDrew/magicbridge/main/packaging/scoop/magicbridge.json
+```
+
+### Method 3: Guided Setup Wizard (Zero-Elevation GUI)
 MagicBridge provides a zero-elevation graphical setup wizard:
-1. In the extracted release folder, double-click `setup.cmd` (or open PowerShell and run `.\setup-wizard.ps1`).
-2. The guided setup wizard allows you to:
+1. Download `MagicBridge-v<version>-windows-x64.zip` from [GitHub Releases](https://github.com/DooperDrew/magicbridge/releases/latest).
+2. Extract the archive, and double-click `setup.cmd` (or open PowerShell and run `.\setup-wizard.ps1`).
+3. The guided setup wizard allows you to:
    - Select installation destination (default: `%LOCALAPPDATA%\Programs\MagicBridge`, no Administrator privileges needed).
    - Toggle Start Menu and Desktop shortcuts.
-   - Configure automatic launch on Windows sign-in (per-user registry).
+   - Configure automatic launch on Windows sign-in (per-user registry `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`).
    - Automatically launch the settings wizard upon completion.
-3. MagicBridge registers cleanly in Windows **Installed apps** (Add or Remove Programs) with full uninstallation support.
+4. MagicBridge registers cleanly in Windows **Installed apps** (Settings &rarr; Apps / Control Panel) with full uninstallation support.
 
 For unattended or headless environments:
 ```powershell
@@ -72,9 +82,16 @@ For unattended or headless environments:
 # Console-mode interactive setup:
 .\setup-wizard.ps1 -NoGui
 
-# Script installer:
+# Lightweight script installer:
 .\install.ps1
 ```
+
+### Method 4: Portable Run (No Installation Required)
+1. Download `MagicBridge-v<version>-windows-x64.zip` from the GitHub Releases page.
+2. Extract the archive into any folder of your choice (e.g. `C:\Tools\MagicBridge` or `%LOCALAPPDATA%\MagicBridge`).
+3. Double-click `magicbridge-agent.exe`.
+4. A keyboard icon will appear in your Windows System Tray (notification area next to the clock).
+5. Right-click the tray icon and select **Open Settings** (or launch `magicbridge-settings.exe`) to customize your layout.
 
 ---
 

@@ -62,6 +62,51 @@ The Apple Magic Keyboard with Numeric Keypad (**model A1843**) is a gorgeous pie
 
 ---
 
+## 📥 Download & Installation
+
+MagicBridge requires **no administrator privileges** and provides multiple distribution channels to fit your workflow:
+
+### Option 1: Microsoft WinGet (Recommended)
+Install directly using the official Windows Package Manager:
+```powershell
+# Install latest release from community repository:
+winget install DooperDrew.MagicBridge
+
+# Or install directly from the local repository manifest:
+winget install --manifest packaging/winget/manifests/d/DooperDrew/MagicBridge/0.2.0/
+```
+
+### Option 2: Scoop Package Manager
+Install via Scoop for automatic PATH management and easy updates:
+```powershell
+scoop install https://raw.githubusercontent.com/DooperDrew/magicbridge/main/packaging/scoop/magicbridge.json
+```
+
+### Option 3: Guided Windows Setup Wizard (Zero-Elevation GUI)
+1. Download the latest release archive (`MagicBridge-v0.2.0-windows-x64.zip`) from [GitHub Releases](https://github.com/DooperDrew/magicbridge/releases/latest).
+2. Extract the ZIP and double-click **`setup.cmd`** (or execute `.\setup-wizard.ps1` in PowerShell).
+3. The graphical setup wizard lets you:
+   - Choose your install location (defaults to `%LOCALAPPDATA%\Programs\MagicBridge`).
+   - Create Start Menu and Desktop shortcuts.
+   - Configure automatic launch on Windows sign-in.
+   - Automatically register in Windows **Installed apps** (Control Panel / Settings) with full clean uninstallation support.
+
+*For silent or automated deployments:*
+```powershell
+# Silent zero-touch install:
+.\setup-wizard.ps1 -Silent
+
+# Console-only interactive install:
+.\setup-wizard.ps1 -NoGui
+```
+
+### Option 4: Portable ZIP (No Installation Required)
+1. Download and extract `MagicBridge-v0.2.0-windows-x64.zip`.
+2. Double-click `magicbridge-agent.exe`.
+3. The keyboard tray icon will appear immediately. Zero registry keys touched. Runs seamlessly from a USB drive or local folder.
+
+---
+
 ## Architecture Overview
 
 MagicBridge is engineered as a clean Rust Cargo workspace separating pure business logic from operating system hooks and UI:

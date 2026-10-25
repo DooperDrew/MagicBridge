@@ -28,6 +28,7 @@ All development steps, hardware discoveries, architectural decisions, and commit
    - Hardened `.github/pull_request_template.md` with Agent task options, requirement tracking, and Sole Committer checklist.
    - Updated `CONTRIBUTING.md` with multi-agent branch conventions and task handoff lifecycle.
    - Created centralized documentation hub `docs/README.md` cataloging the specification hierarchy, reading order, and 16-document inventory.
+   - Added prominent **📥 Download & Installation** guide to `README.md` and expanded `docs/user-guide.md` with detailed instructions for all 4 distribution methods: Microsoft WinGet (`winget install DooperDrew.MagicBridge`), Scoop (`scoop install ...`), Graphical Setup Wizard (`setup.cmd` / `setup-wizard.ps1`), and Portable Release ZIP.
 
 ---
 

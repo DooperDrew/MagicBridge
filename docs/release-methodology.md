@@ -86,19 +86,22 @@ cargo test --workspace
 cargo build --workspace --release
 ```
 
-### Step 3: Release Packaging
+### Step 3: Release Packaging & Distribution Manifests
 Run the automated release packaging tool:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\package-release.ps1
 ```
-This produces `dist/MagicBridge-v<version>-windows-x64.zip` containing:
-- `magicbridge-agent.exe`
-- `magicbridge-settings.exe`
-- `locales/` (`en.toml`, `it.toml`)
-- `setup-wizard.ps1` & `setup.cmd`
-- `install.ps1` & `uninstall.ps1`
-- `installer.iss`
-- `user-guide.md`, `README.md`, `LICENSE`
+This produces:
+1. `dist/MagicBridge-v<version>-windows-x64.zip` containing:
+   - `magicbridge-agent.exe`
+   - `magicbridge-settings.exe`
+   - `locales/` (`en.toml`, `it.toml`)
+   - `setup-wizard.ps1` & `setup.cmd`
+   - `install.ps1` & `uninstall.ps1`
+   - `installer.iss`
+   - `user-guide.md`, `README.md`, `LICENSE`
+2. **WinGet Manifests:** `packaging/winget/manifests/d/DooperDrew/MagicBridge/<version>/` (version, installer, and defaultLocale YAMLs ready for `microsoft/winget-pkgs`).
+3. **Scoop Manifest:** `packaging/scoop/magicbridge.json` (auto-populated with latest SHA256 and release download URL).
 
 ### Step 4: Git Commit & Tagging
 ```powershell
