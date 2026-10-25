@@ -1,4 +1,4 @@
-﻿# AGENTS.md — Mandatory Operating Guidelines for AI Agents
+# AGENTS.md — Mandatory Operating Guidelines for AI Agents
 
 > **CRITICAL FOR ALL AI AGENTS & CODING ASSISTANTS:**
 > You are working on **MagicBridge** (`https://github.com/DooperDrew/magicbridge`).
@@ -69,7 +69,7 @@ To maximize token efficiency without sacrificing code quality or safety, every t
 If a target model is unavailable (due to token limits, quota exhaustion, or rate limits):
 1. **Fallback Selection:** Fall back to the next available model in order: `inherit` &rarr; `pro` &rarr; `flash` &rarr; `flash_lite`.
 2. **Mandatory Logging:** The Lead Agent MUST immediately log the occurrence in [`docs/model-fallback-log.md`](docs/model-fallback-log.md) recording the task, target model, fallback model used, and reason.
-3. **Audit Task Scheduling:** The Lead Agent MUST schedule a retrospective verification task in `docs/05-roadmap.md` under Milestone 6 (Hardening & Performance) to review the fallback implementation with a higher-tier model when tokens/quota permit.
+3. **Audit Task Scheduling:** The Lead Agent MUST schedule a retrospective verification task in `docs/05-roadmap.md` under the active milestone or next release hardening gate to review the fallback implementation with a higher-tier model when tokens/quota permit.
 
 ---
 
@@ -81,7 +81,11 @@ Before writing or modifying any code, the agent MUST read:
 4. `docs/hardware-findings.md`: **Hardware ground truth** from physical A1843 testing. (Do NOT assume or guess HID/hardware behavior).
 5. `docs/04-ux.md`: System tray specifications and `egui` visual keyboard design.
 6. `docs/05-roadmap.md`: The single source of truth for current tasks.
-7. `CHANGELOG.md`: Chronological log of decisions, findings, and completed milestones.
+7. `docs/06-qa-and-validation.md`: **Hardware QA Test Matrix** and verification procedures.
+8. `docs/lessons-learned.md`: **Living Lessons Learned** (known traps, toolchain quirks, hardware findings).
+9. `docs/retrospective.md`: Project retrospective and promoted operational insights.
+10. `docs/multi-agent-methodology.md`: Parallel worker orchestration guide and reporting templates.
+11. `CHANGELOG.md`: Chronological log of decisions, findings, and completed milestones.
 
 ---
 
@@ -91,6 +95,8 @@ Before writing or modifying any code, the agent MUST read:
 1. **Locate the Task:** Check `docs/05-roadmap.md` for the next unchecked item or work on the specific task assigned by the user.
 2. **Restate Intent:** Clearly restate the task, its complexity tier (`T1`/`T2`/`T3`), target crate/files, and acceptance criteria.
 3. **Verify Clean Workspace:** Check `git status` and ensure latest changes from `origin main`.
+4. **Environment & PATH Resiliency:** Never assume toolchains (`cargo`, `rustc`) exist in subshell `$env:PATH`. Prepend the user cargo bin path before invoking commands:
+   `$env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User') + ";$env:USERPROFILE\.cargo\bin"`
 
 ### B. Implementation & Performance Guards
 - **Hook Thread Rule (NFR-P3):** The `WH_KEYBOARD_LL` callback in `magicbridge-agent` MUST NEVER allocate memory (`Vec`, `String`, `Box`), perform disk/file I/O, output log prints, acquire locks, or invoke blocking syscalls. Precomputed lookup tables only.
@@ -104,20 +110,28 @@ Before writing or modifying any code, the agent MUST read:
   - `crates/core` (`magicbridge-core`): Pure business logic. `#![forbid(unsafe_code)]`. Zero Win32 dependencies. 100% unit tested.
   - `crates/agent` (`magicbridge-agent`): Daemon, hooks, tray, HID, IPC server.
   - `crates/settings` (`magicbridge-settings`): `egui` GUI, only resident while open.
+  - `crates/hid-probe` (`hid-probe`): Standalone diagnostic hardware probe utility.
 - **Safety Documentation:** Every `unsafe` block in Win32 wrappers MUST be accompanied by a clear `// SAFETY:` explanatory comment detailing preconditions and invariants.
 - **No Hardcoded UI Strings:** All user-facing text belongs in translation files (`locales/en.toml`, `locales/it.toml`).
+- **Windows / PowerShell Hygiene:**
+  - When writing files from PowerShell, always force UTF-8 (`Set-Content -Encoding utf8` / `Out-File -Encoding utf8`). Prefer dedicated file-writing tools over shell redirection.
+  - Use `;` instead of `&&` for command chaining in PowerShell 5.
+  - Scope file searches strictly to the project workspace; never run unconstrained recursive searches over `.cargo`, `target`, or dependency caches.
 
 ### D. Verification Gate (MUST PASS Locally)
 Before finishing any turn or committing, the Lead Agent MUST run and verify clean output:
 ```powershell
+# 0. Ensure resilient environment PATH
+$env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User') + ";$env:USERPROFILE\.cargo\bin"
+
 # 1. Format verification
 cargo fmt --all -- --check
 
 # 2. Strict linter (warnings are treated as errors)
 cargo clippy --workspace --all-targets -- -D warnings
 
-# 3. Full test suite
-cargo test --workspace
+# 3. Full test suite (use --test-threads=1 if testing concurrent named pipes/hooks)
+cargo test --workspace -- --test-threads=1
 
 # 4. Release compilation check
 cargo build --workspace --release
@@ -125,11 +139,13 @@ cargo build --workspace --release
 
 ### E. Post-Execution & Documentation Synchronization (Lead Agent Only)
 Once the task is validated:
-1. **Update Roadmap:** Tick the completed box `[x]` in `docs/05-roadmap.md` with commit/date notes.
-2. **Log to CHANGELOG.md:** Add a comprehensive entry to `CHANGELOG.md` detailing changes, architectural decisions, and hardware discoveries.
-3. **Update Docs:** Update `docs/` or ADRs if architectural decisions changed.
-4. **Git Commit & Push:** Commit with an informative message (e.g. `M2.3: modifier presets and per-key remap`) and push to `origin main`.
-5. **Update GitHub Issue / Milestone:** Update or close the corresponding GitHub Issue using `gh issue close <id>` or `gh issue edit`.
+1. **Facts vs. Guesses (Claims Follow Evidence):** Never mark physical hardware tests as passed without empirical evidence from testing on a physical A1843 keyboard. Automated invariant tests and unit tests are marked PASS; physical matrix rows in `docs/06-qa-and-validation.md` and roadmap remain marked `[Pending Physical Confirmation]`.
+2. **Update Roadmap:** Tick the completed box `[x]` in `docs/05-roadmap.md` with commit/date notes (or record `[Pending Physical Confirmation]` for hardware items).
+3. **Log to CHANGELOG.md:** Add a comprehensive entry to `CHANGELOG.md` detailing changes, architectural decisions, and hardware discoveries.
+4. **Update Docs:** Update `docs/` or ADRs if architectural decisions changed.
+5. **Git Cleanliness:** Built binaries or packages (`dist/*.zip`, `.msi`) MUST NEVER be committed to git. Release assets are attached exclusively to GitHub Releases.
+6. **Git Commit & Push:** Commit with an informative message (e.g. `M2.3: modifier presets and per-key remap`) and push to `origin main`.
+7. **Update GitHub Issue / Milestone:** Update or close the corresponding GitHub Issue using `gh issue close <id>` or `gh issue edit`.
 
 ---
 
@@ -145,3 +161,11 @@ Once the task is validated:
 If physical keyboard behavior or testing contradicts existing documentation:
 **STOP immediately. Do not guess or silently hack around it.**
 Present the empirical findings to the user, formulate a probe or verification step, and update `docs/hardware-findings.md` upon user alignment.
+
+---
+
+## 8. Continuous Learning Loop
+When the user corrects or redirects the agent, the agent MUST proactively propose adding the correction as an explicit rule to:
+- `AGENTS.md` (if project-specific, e.g. Win32 hook timings, layout nuances, crate boundaries)
+- `docs/lessons-learned.md` (if generic to engineering, tooling, or agentic workflow)
+Do not simply apologize or apply it silently in code.
