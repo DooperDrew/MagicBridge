@@ -6,6 +6,22 @@ All development steps, hardware discoveries, architectural decisions, and commit
 
 ## 2026-10-25 — Milestone 1: Agent Skeleton (In Progress)
 
+### M1.1 — Daemon Shell, Single-Instance Mutex, Hidden Window & Tray Icon
+- Implemented background daemon runtime shell in `crates/agent`:
+  - `single_instance`: Named Win32 Mutex `Local\MagicBridge_SingleInstance_Mutex` to ensure single instance (F8.3), exiting cleanly with code 0 on duplicate.
+  - `window`: Hidden message window (`MagicBridge_MsgWndClass`) with clean Win32 message pump (`GetMessageW` / `TranslateMessage` / `DispatchMessageW`). Handles `WM_CREATE`, `WM_COMMAND`, `WM_TRAY_CALLBACK`, and `TaskbarCreated` broadcast message to restore tray icon if Windows Explorer restarts.
+  - `tray`: System tray icon (`Shell_NotifyIconW`) with tooltip showing keyboard connection status, battery, active profile, and top-row mode.
+  - Context menu: Enabled/Paused toggle, Profile submenu, Top Row mode toggle, Open Settings... (launches `magicbridge-settings.exe`), Start with Windows toggle, and Quit.
+  - Subagent: `T2-Agent-M1.1` running `flash`.
+
+### M1.3 — Windows Autostart Toggle (HKCU Run Key)
+- Implemented per-user autostart manager in `crates/agent/src/autostart.rs`:
+  - Interacts with `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run` value `"MagicBridge"` (`REG_SZ`).
+  - Pure user-space, zero administrator or UAC elevation required (NFR-S1).
+  - Handles command line path quoting, RAII `RegCloseKey` handles, and idempotent toggling (`enable_autostart`, `disable_autostart`, `is_autostart_enabled`).
+  - Includes 8 tests verifying quoting, spacing, and isolated registry CRUD operations.
+  - Subagent: `T1-Autostart-M1.3` running `flash`.
+
 ### M1.2 — Config Schema in `crates/core`
 - Implemented complete configuration schema, named profiles, multi-language layout models, and TOML persistence in `magicbridge_core::config`:
   - `Config`: global settings (`active_profile`, `autostart`, `battery_poll_minutes`, `low_battery_threshold_percent`, `ui_language`, `pause_hotkey`, `debug_logging`, and `profiles`).

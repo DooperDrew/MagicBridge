@@ -1,0 +1,304 @@
+//! System tray icon and context menu management (F8.2, docs/04-ux.md).
+
+use windows::Win32::Foundation::{HWND, LPARAM, POINT, WPARAM};
+use windows::Win32::UI::Shell::{
+    NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NIM_DELETE, NIM_MODIFY, NOTIFYICONDATAW,
+    Shell_NotifyIconW,
+};
+use windows::Win32::UI::WindowsAndMessaging::{
+    AppendMenuW, CreatePopupMenu, DestroyMenu, GetCursorPos, HICON, IDI_APPLICATION, LoadIconW,
+    MF_CHECKED, MF_POPUP, MF_SEPARATOR, MF_STRING, MF_UNCHECKED, PostMessageW, SetForegroundWindow,
+    TPM_BOTTOMALIGN, TPM_RIGHTBUTTON, TrackPopupMenuEx, WM_NULL,
+};
+use windows::core::{HSTRING, PCWSTR, w};
+
+use crate::state::DaemonState;
+use magicbridge_core::TopRowMode;
+
+/// Custom message ID sent to the window when tray events occur (WM_USER + 1).
+pub const WM_TRAY_CALLBACK: u32 = windows::Win32::UI::WindowsAndMessaging::WM_USER + 1;
+
+/// Tray icon ID within this window.
+pub const TRAY_ICON_ID: u32 = 1;
+
+/// Menu command IDs.
+pub const IDM_TOGGLE_ENABLED: usize = 1001;
+pub const IDM_TOPROW_MEDIA_FIRST: usize = 1002;
+pub const IDM_TOPROW_FKEYS_FIRST: usize = 1003;
+pub const IDM_OPEN_SETTINGS: usize = 1004;
+pub const IDM_START_WITH_WINDOWS: usize = 1005;
+pub const IDM_QUIT: usize = 1006;
+pub const IDM_PROFILE_BASE: usize = 2000;
+
+/// Copies a string slice into a fixed-size UTF-16 null-terminated buffer.
+pub fn copy_to_sz_tip(dest: &mut [u16; 128], text: &str) {
+    let mut i = 0;
+    for c in text.encode_utf16() {
+        if i >= 127 {
+            break;
+        }
+        dest[i] = c;
+        i += 1;
+    }
+    dest[i] = 0;
+}
+
+/// System tray icon wrapper.
+#[derive(Debug)]
+pub struct TrayIcon {
+    hwnd: HWND,
+    hicon: HICON,
+}
+
+impl TrayIcon {
+    /// Creates and displays the system tray icon.
+    pub fn create(hwnd: HWND, initial_state: &DaemonState) -> Result<Self, windows::core::Error> {
+        // SAFETY: LoadIconW with IDI_APPLICATION loads the standard system application icon.
+        let hicon = unsafe { LoadIconW(None, IDI_APPLICATION)? };
+
+        let mut nid = NOTIFYICONDATAW {
+            cbSize: std::mem::size_of::<NOTIFYICONDATAW>() as u32,
+            hWnd: hwnd,
+            uID: TRAY_ICON_ID,
+            uFlags: NIF_MESSAGE | NIF_ICON | NIF_TIP,
+            uCallbackMessage: WM_TRAY_CALLBACK,
+            hIcon: hicon,
+            ..Default::default()
+        };
+
+        let tooltip = initial_state.format_tooltip();
+        copy_to_sz_tip(&mut nid.szTip, &tooltip);
+
+        // SAFETY: `nid` is properly initialized with valid window handle, icon, and callback message.
+        unsafe {
+            Shell_NotifyIconW(NIM_ADD, &nid).ok()?;
+        }
+
+        Ok(Self { hwnd, hicon })
+    }
+
+    /// Re-adds the tray icon (e.g. when Explorer restarts and sends `TaskbarCreated`).
+    pub fn re_add(&self, state: &DaemonState) {
+        let mut nid = NOTIFYICONDATAW {
+            cbSize: std::mem::size_of::<NOTIFYICONDATAW>() as u32,
+            hWnd: self.hwnd,
+            uID: TRAY_ICON_ID,
+            uFlags: NIF_MESSAGE | NIF_ICON | NIF_TIP,
+            uCallbackMessage: WM_TRAY_CALLBACK,
+            hIcon: self.hicon,
+            ..Default::default()
+        };
+
+        let tooltip = state.format_tooltip();
+        copy_to_sz_tip(&mut nid.szTip, &tooltip);
+
+        // SAFETY: `nid` is initialized with valid window handle and icon.
+        unsafe {
+            let _ = Shell_NotifyIconW(NIM_ADD, &nid);
+        }
+    }
+
+    /// Updates the tray icon tooltip from the latest daemon state.
+    pub fn update_tooltip(&self, state: &DaemonState) {
+        let mut nid = NOTIFYICONDATAW {
+            cbSize: std::mem::size_of::<NOTIFYICONDATAW>() as u32,
+            hWnd: self.hwnd,
+            uID: TRAY_ICON_ID,
+            uFlags: NIF_TIP,
+            ..Default::default()
+        };
+
+        let tooltip = state.format_tooltip();
+        copy_to_sz_tip(&mut nid.szTip, &tooltip);
+
+        // SAFETY: `nid` is initialized with valid window handle and ID.
+        unsafe {
+            let _ = Shell_NotifyIconW(NIM_MODIFY, &nid);
+        }
+    }
+
+    /// Displays the tray context menu at the current cursor position.
+    pub fn show_context_menu(&self, state: &DaemonState) {
+        let mut pt = POINT::default();
+        // SAFETY: `GetCursorPos` has no preconditions and fills `pt`.
+        if unsafe { GetCursorPos(&mut pt) }.is_err() {
+            return;
+        }
+
+        // SAFETY: `CreatePopupMenu` creates a new empty popup menu.
+        let Ok(hmenu) = (unsafe { CreatePopupMenu() }) else {
+            return;
+        };
+
+        // 1. Enabled / Paused (toggle)
+        let enabled_flags = if state.enabled {
+            MF_STRING | MF_CHECKED
+        } else {
+            MF_STRING | MF_UNCHECKED
+        };
+        // SAFETY: `hmenu` is a valid menu handle.
+        unsafe {
+            let _ = AppendMenuW(hmenu, enabled_flags, IDM_TOGGLE_ENABLED, w!("Enabled"));
+        }
+
+        // 2. Profile submenu
+        // SAFETY: `CreatePopupMenu` creates a new empty popup submenu.
+        let profile_menu_res = unsafe { CreatePopupMenu() };
+        if let Ok(h_profile_menu) = profile_menu_res {
+            let profiles = state.profile_names();
+            let active_profile = state.active_profile_name();
+
+            for (i, name) in profiles.iter().enumerate() {
+                let flags = if name == active_profile {
+                    MF_STRING | MF_CHECKED
+                } else {
+                    MF_STRING | MF_UNCHECKED
+                };
+                let hstr = HSTRING::from(name.as_str());
+                // SAFETY: `h_profile_menu` is valid; `hstr` provides a valid null-terminated PCWSTR.
+                unsafe {
+                    let _ = AppendMenuW(
+                        h_profile_menu,
+                        flags,
+                        IDM_PROFILE_BASE + i,
+                        PCWSTR(hstr.as_ptr()),
+                    );
+                }
+            }
+
+            // SAFETY: Attach profile submenu to root popup menu.
+            unsafe {
+                let _ = AppendMenuW(hmenu, MF_POPUP, h_profile_menu.0 as usize, w!("Profile"));
+            }
+        }
+
+        // 3. Top Row Mode submenu
+        // SAFETY: `CreatePopupMenu` creates a new empty popup submenu.
+        let toprow_menu_res = unsafe { CreatePopupMenu() };
+        if let Ok(h_toprow_menu) = toprow_menu_res {
+            let mode = state.active_top_row_mode();
+            let media_flags = if mode == TopRowMode::MediaKeysFirst {
+                MF_STRING | MF_CHECKED
+            } else {
+                MF_STRING | MF_UNCHECKED
+            };
+            let fkeys_flags = if mode == TopRowMode::FKeysFirst {
+                MF_STRING | MF_CHECKED
+            } else {
+                MF_STRING | MF_UNCHECKED
+            };
+
+            // SAFETY: `h_toprow_menu` is valid.
+            unsafe {
+                let _ = AppendMenuW(
+                    h_toprow_menu,
+                    media_flags,
+                    IDM_TOPROW_MEDIA_FIRST,
+                    w!("Media keys first"),
+                );
+                let _ = AppendMenuW(
+                    h_toprow_menu,
+                    fkeys_flags,
+                    IDM_TOPROW_FKEYS_FIRST,
+                    w!("F-keys first"),
+                );
+                let _ = AppendMenuW(
+                    hmenu,
+                    MF_POPUP,
+                    h_toprow_menu.0 as usize,
+                    w!("Top Row Mode"),
+                );
+            }
+        }
+
+        // 4. Open Settings...
+        // SAFETY: `hmenu` is a valid menu handle.
+        unsafe {
+            let _ = AppendMenuW(hmenu, MF_STRING, IDM_OPEN_SETTINGS, w!("Open Settings..."));
+        }
+
+        // 5. Start with Windows (checkable)
+        let autostart_flags = if state.config.autostart {
+            MF_STRING | MF_CHECKED
+        } else {
+            MF_STRING | MF_UNCHECKED
+        };
+        // SAFETY: `hmenu` is a valid menu handle.
+        unsafe {
+            let _ = AppendMenuW(
+                hmenu,
+                autostart_flags,
+                IDM_START_WITH_WINDOWS,
+                w!("Start with Windows"),
+            );
+        }
+
+        // 6. Separator
+        // SAFETY: `hmenu` is a valid menu handle.
+        unsafe {
+            let _ = AppendMenuW(hmenu, MF_SEPARATOR, 0, PCWSTR::null());
+        }
+
+        // 7. Quit
+        // SAFETY: `hmenu` is a valid menu handle.
+        unsafe {
+            let _ = AppendMenuW(hmenu, MF_STRING, IDM_QUIT, w!("Quit"));
+        }
+
+        // Microsoft KB Q135788:
+        // SetForegroundWindow must be called prior to TrackPopupMenuEx so clicking outside
+        // dismisses the menu, followed by a benign WM_NULL message.
+        // SAFETY: `self.hwnd` is a valid window handle.
+        unsafe {
+            let _ = SetForegroundWindow(self.hwnd);
+            let _ = TrackPopupMenuEx(
+                hmenu,
+                (TPM_RIGHTBUTTON | TPM_BOTTOMALIGN).0,
+                pt.x,
+                pt.y,
+                self.hwnd,
+                None,
+            );
+            let _ = PostMessageW(Some(self.hwnd), WM_NULL, WPARAM(0), LPARAM(0));
+            let _ = DestroyMenu(hmenu);
+        }
+    }
+}
+
+impl Drop for TrayIcon {
+    fn drop(&mut self) {
+        let nid = NOTIFYICONDATAW {
+            cbSize: std::mem::size_of::<NOTIFYICONDATAW>() as u32,
+            hWnd: self.hwnd,
+            uID: TRAY_ICON_ID,
+            ..Default::default()
+        };
+        // SAFETY: Cleans up the tray icon upon agent exit.
+        unsafe {
+            let _ = Shell_NotifyIconW(NIM_DELETE, &nid);
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sz_tip_copying_and_truncation() {
+        let mut buf = [0u16; 128];
+        copy_to_sz_tip(&mut buf, "MagicBridge Test Tooltip");
+
+        let s = String::from_utf16_lossy(&buf);
+        let trimmed = s.trim_end_matches('\0');
+        assert_eq!(trimmed, "MagicBridge Test Tooltip");
+
+        // Test buffer truncation at 127 chars + null terminator
+        let long_str = "a".repeat(200);
+        copy_to_sz_tip(&mut buf, &long_str);
+        assert_eq!(buf[127], 0);
+        let s2 = String::from_utf16_lossy(&buf);
+        let trimmed2 = s2.trim_end_matches('\0');
+        assert_eq!(trimmed2.len(), 127);
+    }
+}

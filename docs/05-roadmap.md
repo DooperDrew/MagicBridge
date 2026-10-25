@@ -22,9 +22,9 @@ Goal: learn exactly what the A1843 sends on Windows, over USB and Bluetooth.
 **Exit:** Fn detection approach decided (native or fallback), battery approach decided, device-filtering approach decided.
 
 ## M1 — Agent skeleton
-- [ ] `[T2]` M1.1 Tray icon + menu (Enable, Profile submenu, Open settings, Quit), single-instance mutex, hidden message window.
+- [x] `[T2]` M1.1 Tray icon + menu (Enable, Profile submenu, Open settings, Quit), single-instance mutex, hidden message window. _(2026-10-25 — M1.1 completed)_
 - [x] `[T1]` M1.2 Config schema in `core` (with named profiles & multiple language layouts) + TOML load/save with defaults; config path in `%APPDATA%`. _(2026-10-25 — M1.2 completed)_
-- [ ] `[T2]` M1.3 Autostart toggle (HKCU Run key).
+- [x] `[T2]` M1.3 Autostart toggle (HKCU Run key). _(2026-10-25 — M1.3 completed)_
 - [ ] `[T2]` M1.4 Device arrival/removal and sleep/resume handling.
 **Exit:** agent idles at 0% CPU and ≤ 5 MB RAM with tray working.
 
