@@ -9,8 +9,8 @@ Goal: learn exactly what the A1843 sends on Windows, over USB and Bluetooth.
 - [x] M0.1 Set up the Cargo workspace skeleton (`core`, `agent`, `settings`, `hid-probe`), CI-free local build, release profile. _(2026-10-25)_
 - [x] M0.2 `hid-probe`: list all HID devices with VID `0x05AC` (PID, usage page/usage, report descriptors, transport). _(2026-10-25)_
 - [x] M0.3 `hid-probe`: live-dump Raw Input and HID reports with timestamps; also log `WH_KEYBOARD_LL` events (vk, scancode, flags) side by side. _(2026-10-25)_
-- [x] M0.4 Owner runs the probe on **USB** and **Bluetooth** and presses: Fn, Fn+each key, every top-row key, Eject, F13–F19, Clear, all modifiers. _(2026-10-25 — USB captured in `target\usb-dump.log`; BT capture in progress)_
-- [x] M0.5 Investigate battery reporting (HID feature report / BT device property). _(2026-10-25 — HID Input Report `0x90` on `0xFF00:0x0014` returns `[0x90, status, pct]`; `PKEY_BLUETOOTH_BATTERY` supported as BT fallback)_
+- [x] M0.4 Owner runs the probe on **USB** and **Bluetooth** and presses: Fn, Fn+each key, every top-row key, Eject, F13–F19, Clear, all modifiers. _(2026-10-25 — verified on both USB `05AC:026C` and Bluetooth `004C:026C`)_
+- [x] M0.5 Investigate battery reporting (HID feature report / BT device property). _(2026-10-25 — HID Input Report `0x90` on `0xFF00:0x0014` returns `[0x90, status, pct]` on both USB `90 01 64` and Bluetooth `90 00 64`)_
 - [x] M0.6 Investigate matching Raw Input device handles with hook events (device filtering). _(2026-10-25 — `WH_KEYBOARD_LL` fires 0.43–1.76 ms before `WM_INPUT`; presence-based device filtering selected)_
 - [x] M0.7 Write `docs/hardware-findings.md` and update requirements/architecture where 🔬 items are resolved. _(2026-10-25)_
 

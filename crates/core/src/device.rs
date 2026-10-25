@@ -136,10 +136,10 @@ mod tests {
     #[test]
     fn bluetooth_classic_path() {
         let p = parse_hid_path(
-            r"\\?\HID#{00001124-0000-1000-8000-00805f9b34fb}_VID&000205ac_PID&026c&Col01#9&1234&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+            r"\\?\HID#{00001124-0000-1000-8000-00805f9b34fb}_VID&0001004c_PID&026c&Col01#8&eb3c0b3&0&0000#{884b96c3-56ef-11d1-bc8c-00a0c91405dd}",
         );
         assert_eq!(p.transport, Transport::Bluetooth);
-        assert_eq!(p.vid, Some(0x05AC));
+        assert_eq!(p.vid, Some(0x004C));
         assert_eq!(p.pid, Some(0x026C));
         assert_eq!(p.interface, None);
         assert_eq!(p.collection, Some(1));

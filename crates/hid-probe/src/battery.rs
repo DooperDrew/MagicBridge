@@ -154,7 +154,7 @@ fn probe_pnp_devices(all: bool) {
         }
         let instance = instance_id(set, &dev).unwrap_or_default();
         let up = instance.to_ascii_uppercase();
-        let is_apple = up.contains("05AC");
+        let is_apple = up.contains("05AC") || up.contains("004C");
         let batt = read_prop_byte(set, &dev, &PKEY_BLUETOOTH_BATTERY);
         if !is_apple && batt.is_none() && !(all && up.starts_with("BTH")) {
             continue;

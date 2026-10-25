@@ -107,7 +107,7 @@ pub fn run(all: bool) {
         if all {
             "all vendors"
         } else {
-            "Apple VID 0x05AC"
+            "Apple VID 0x05AC / BT 0x004C"
         }
     );
     if cols.is_empty() {

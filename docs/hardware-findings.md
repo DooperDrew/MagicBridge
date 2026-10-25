@@ -5,14 +5,17 @@
 
 ## 1. Device Identification
 
-| Property | Value |
-|---|---|
-| Manufacturer | `Apple Inc.` |
-| Product Name (USB composite) | `Magic Keyboard with Numeric Keypad` |
-| Vendor ID (`VID`) | `0x05AC` |
-| Product ID (`PID`) | `0x026C` |
-| Revision (`VersionNumber`) | `0x0852` |
-| Tested Layout | ISO (Italian Windows keyboard layout active) |
+| Property | USB Value | Bluetooth Value |
+|---|---|---|
+| Manufacturer | `Apple Inc.` | `Apple Inc.` |
+| Product Name | `Magic Keyboard with Numeric Keypad` | `Magic Keyboard with Numeric Keypad` |
+| Vendor ID (`VID`) | **`0x05AC`** (USB-IF Apple Inc.) | **`0x004C`** (Bluetooth SIG Apple Inc., `VID&0001004c`) |
+| Product ID (`PID`) | `0x026C` | `0x026C` |
+| Revision (`VersionNumber`) | `0x0852` | `0x0000` |
+| Tested Layout | ISO (Italian Windows keyboard layout active) | ISO (Italian Windows keyboard layout active) |
+
+> [!IMPORTANT]
+> Over Bluetooth Classic (`{00001124-0000-1000-8000-00805f9b34fb}`), the A1843 identifies itself with Apple's **Bluetooth SIG Company ID `0x004C`** (`VID&0001004c_PID&026c`) rather than Apple's USB Vendor ID `0x05AC`. `magicbridge_core::is_apple_vendor` checks both `0x05AC` and `0x004C`.
 
 ---
 
@@ -27,6 +30,15 @@ When connected via Lightning-to-USB cable, the A1843 enumerates as a composite U
 | `[2]` | `MI_01&Col01` (`\kbd`) | `"Keyboard / Boot"` | `0x0001:0x0006` (Generic Desktop / Keyboard) | `10 / 2 / 0` | **Denied (`0x80070005`)** | Main keyboard (`id=0x01`, 10B in / 2B LED out):<br>• `0x0007:0x0000..0x00FF` Keys<br>• `0x0007:0x00E0..0x00E7` Modifiers<br>• `0x000C:0x00B8` **Consumer Eject** (1-bit button)<br>• `0x00FF:0x0003` **Apple Fn** (7-bit value, logical `0..1`). |
 | `[3]` | `MI_01&Col02` | `"Keyboard / Boot"` | `0x000C:0x0001` (Consumer Control) | `2 / 0 / 4` | `OK` | Input `0x52` (2B): Fast Forward (`0xB3`), Rewind (`0xB4`), Next (`0xB5`), Prev (`0xB6`), Play/Pause (`0xCD`).<br>Feature `0x09` (4B): `0xFF01:0x000B` (`GetFeature` returns `09 01 00 00`). |
 | `[4]` | `MI_01&Col03` | `"Keyboard / Boot"` | `0xFF00:0x0006` (Vendor) | `65 / 0 / 0` | `OK` | Input `0x3f` (8-bit × 64). |
+
+### 2.1 Top-Level HID Collections (Bluetooth Classic)
+
+When connected over Bluetooth Classic (`{00001124-0000-1000-8000-00805f9b34fb}_VID&0001004c_PID&026c`), the A1843 exposes **2 top-level HID collections**:
+
+| # | Collection | Product String | Top-Level Usage | Report Lengths (In / Out / Feat) | User-Mode `ReadFile` | Purpose & Report Fields |
+|---|---|---|---|---|---|---|
+| `[0]` | `Col01` (`\kbd`) | `"Magic Keyboard with Numeric Keypad"` | `0x0001:0x0006` (Generic Desktop / Keyboard) | `10 / 2 / 65` | **Denied (`0x80070005`)** | Main keyboard (`id=0x01`, 10B in / 2B LED out):<br>• `0x0007:0x0000..0x00FF` Keys<br>• `0x0007:0x00E0..0x00E7` Modifiers<br>• `0x000C:0x00B8` **Consumer Eject** (1-bit button)<br>• `0xFF00:0x0003` **Apple Fn** (1-bit button)<br>• `0xFF01:0x0003` Vendor (1-bit button)<br>Feature `0x55` (65B): `0xFF02:0x0055`. |
+| `[1]` | `Col02` | `"Magic Keyboard with Numeric Keypad"` | `0xFF00:0x0014` (Vendor) | `3 / 0 / 0` | `OK` | **Battery System** (`id=0x90`, 3 bytes): identical to USB `MI_00&Col02` (`0x85:0x44`, `0x85:0x46`, `0x85:0x61`, `0x85:0x65`). |
 
 ---
 
@@ -82,13 +94,14 @@ Notice `scanCode == 0x21D` (as opposed to `0x1D` for physical `LCtrl`).
 
 ## 5. Battery Reporting (M0.5)
 
-- **USB:** Collection `[1]` (`MI_00&Col02`, usage `0xFF00:0x0014`) exposes Input Report `0x90` (3 bytes). Calling `HidD_GetInputReport` with `buf = [0x90, 0, 0]` on a query or read handle succeeds and returns:
+- **Identical HID Report `0x90` on Both USB and Bluetooth:**
+  On both USB (`MI_00&Col02`) and Bluetooth (`Col02`), the keyboard exposes top-level collection `0xFF00:0x0014` with Input Report `0x90` (3 bytes). Calling `HidD_GetInputReport` with `buf = [0x90, 0, 0]` on a query or read handle succeeds on **both transports** and returns:
   - `buf[0] = 0x90` (Report ID)
   - `buf[1]` = status bitmask: bit 0 (`0x01`) = Charging (`0x85:0x44`), bit 1 (`0x02`) = Discharging (`0x85:0x46`), bit 2 (`0x04`) = AC Present (`0x85:0x61`)
-  - `buf[2]` = battery percentage `0..=100` (`0x85:0x65` `AbsoluteStateOfCharge`, observed `0x64` = `100%`).
-- **Bluetooth:** The agent will query:
-  1. HID report `0x90` (`HidD_GetInputReport` / `HidD_GetFeature`) on any Apple (`0x05AC`) HID collection exposing Battery System (`0x85:0x65`) or `0xFF00:0x0014`, and
-  2. Windows PnP device property `PKEY_BLUETOOTH_BATTERY` (`{104ea319-6ee2-4701-bd47-8ddb4425bbe5}`, pid `2`, `DEVPROP_TYPE_BYTE`) on present Apple/Bluetooth HID device nodes.
+  - `buf[2]` = battery percentage `0..=100` (`0x85:0x65` `AbsoluteStateOfCharge`).
+  - **Observed on USB:** `90 01 64` → `100%`, `status = 0x01` (charging).
+  - **Observed on Bluetooth:** `90 00 64` → `100%`, `status = 0x00` (on battery).
+- **Why Windows Settings doesn't show battery %:** Windows' `PKEY_BLUETOOTH_BATTERY` property is not populated on the A1843 `BTHENUM` node because Apple wraps the Battery System (`0x85`) fields inside a vendor top-level collection (`0xFF00:0x0014`). `HidD_GetInputReport(0x90)` on `0xFF00:0x0014` is therefore the authoritative battery source on both USB and Bluetooth (with `PKEY_BLUETOOTH_BATTERY` kept as a secondary fallback).
 
 ---
 
