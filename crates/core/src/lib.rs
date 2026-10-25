@@ -5,6 +5,8 @@
 
 #![forbid(unsafe_code)]
 
+pub mod device;
+
 /// Apple Inc. USB / Bluetooth vendor ID.
 pub const APPLE_VID: u16 = 0x05AC;
 
