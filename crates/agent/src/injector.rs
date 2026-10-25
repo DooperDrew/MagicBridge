@@ -3,11 +3,14 @@
 //! Conforms strictly to NFR-P3 (<0.1ms latency, zero heap allocations, zero locks, zero I/O)
 //! and tags every synthetic event with `MAGICBRIDGE_EXTRA_INFO` to prevent hook feedback loops.
 
-use magicbridge_core::MAGICBRIDGE_EXTRA_INFO;
+use magicbridge_core::{Key, MAGICBRIDGE_EXTRA_INFO};
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     INPUT, INPUT_0, INPUT_KEYBOARD, KEYBD_EVENT_FLAGS, KEYBDINPUT, KEYEVENTF_EXTENDEDKEY,
     KEYEVENTF_KEYUP, SendInput, VIRTUAL_KEY,
 };
+
+/// Maximum number of keys supported in a single atomic shortcut combo.
+pub const MAX_SHORTCUT_KEYS: usize = 4;
 
 /// Builds a single Win32 [`INPUT`] structure for keyboard events.
 ///
@@ -60,6 +63,50 @@ pub fn send_key_up(vk: u16, scan_code: u16, extended: bool) -> bool {
     send_keyboard_event(vk, scan_code, true, extended)
 }
 
+/// Builds the array of Win32 [`INPUT`] structures needed to execute a multi-key shortcut.
+///
+/// Pressing all keys down in forward order, then releasing all keys in reverse order.
+/// Each event is tagged with `MAGICBRIDGE_EXTRA_INFO`.
+///
+/// Returns the number of events populated in `buffer`.
+pub fn build_shortcut_inputs(keys: &[Key], buffer: &mut [INPUT]) -> usize {
+    if keys.is_empty() {
+        return 0;
+    }
+    let total = keys.len() * 2;
+    if buffer.len() < total {
+        return 0;
+    }
+
+    // Key-down events in forward order
+    for (i, key) in keys.iter().enumerate() {
+        buffer[i] = build_keyboard_input(key.vk, key.scan_code, false, key.extended);
+    }
+    // Key-up events in reverse order
+    for (i, key) in keys.iter().rev().enumerate() {
+        buffer[keys.len() + i] = build_keyboard_input(key.vk, key.scan_code, true, key.extended);
+    }
+
+    total
+}
+
+/// Injects a multi-key shortcut combination atomically via Win32 [`SendInput`].
+///
+/// Sends key-down in forward order, and key-up in reverse order in a single call.
+/// Conforms to `NFR-P3` (zero allocations, zero locks, zero I/O) and `NFR-S3` (stuck-key safety).
+/// Returns `true` if all inputs were successfully accepted.
+pub fn send_shortcut(keys: &[Key]) -> bool {
+    if keys.is_empty() || keys.len() > MAX_SHORTCUT_KEYS {
+        return false;
+    }
+    let mut buffer = [build_keyboard_input(0, 0, false, false); MAX_SHORTCUT_KEYS * 2];
+    let count = build_shortcut_inputs(keys, &mut buffer);
+    if count == 0 {
+        return false;
+    }
+    send_inputs(&buffer[..count]) == count as u32
+}
+
 /// Injects a batch of pre-built keyboard events.
 ///
 /// Returns the number of events successfully inserted into the input stream.
@@ -75,7 +122,7 @@ pub fn send_inputs(inputs: &[INPUT]) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use magicbridge_core::key::{VK_DELETE, VK_HOME, VK_SNAPSHOT};
+    use magicbridge_core::key::{VK_DELETE, VK_HOME, VK_LWIN, VK_SNAPSHOT, VK_TAB};
 
     #[test]
     fn test_build_keyboard_input_tags_sentinel_extra_info() {
@@ -109,5 +156,48 @@ mod tests {
     #[test]
     fn test_send_inputs_empty_slice() {
         assert_eq!(send_inputs(&[]), 0);
+    }
+
+    #[test]
+    fn test_build_shortcut_inputs_task_view_win_tab() {
+        let win = Key::from_vk(VK_LWIN);
+        let tab = Key::from_vk(VK_TAB);
+        let mut buffer = [build_keyboard_input(0, 0, false, false); 8];
+
+        let count = build_shortcut_inputs(&[win, tab], &mut buffer);
+        assert_eq!(count, 4);
+
+        // 1. Win down
+        // SAFETY: Reading union field ki for verification.
+        let ki0 = unsafe { buffer[0].Anonymous.ki };
+        assert_eq!(ki0.wVk.0, VK_LWIN);
+        assert_eq!(ki0.dwFlags, KEYEVENTF_EXTENDEDKEY);
+        assert_eq!(ki0.dwExtraInfo, MAGICBRIDGE_EXTRA_INFO);
+
+        // 2. Tab down
+        // SAFETY: Reading union field ki for verification.
+        let ki1 = unsafe { buffer[1].Anonymous.ki };
+        assert_eq!(ki1.wVk.0, VK_TAB);
+        assert_eq!(ki1.dwFlags, KEYBD_EVENT_FLAGS(0));
+        assert_eq!(ki1.dwExtraInfo, MAGICBRIDGE_EXTRA_INFO);
+
+        // 3. Tab up (reverse order)
+        // SAFETY: Reading union field ki for verification.
+        let ki2 = unsafe { buffer[2].Anonymous.ki };
+        assert_eq!(ki2.wVk.0, VK_TAB);
+        assert_eq!(ki2.dwFlags, KEYEVENTF_KEYUP);
+        assert_eq!(ki2.dwExtraInfo, MAGICBRIDGE_EXTRA_INFO);
+
+        // 4. Win up (reverse order)
+        // SAFETY: Reading union field ki for verification.
+        let ki3 = unsafe { buffer[3].Anonymous.ki };
+        assert_eq!(ki3.wVk.0, VK_LWIN);
+        assert_eq!(ki3.dwFlags, KEYEVENTF_KEYUP | KEYEVENTF_EXTENDEDKEY);
+        assert_eq!(ki3.dwExtraInfo, MAGICBRIDGE_EXTRA_INFO);
+    }
+
+    #[test]
+    fn test_send_shortcut_empty_returns_false() {
+        assert!(!send_shortcut(&[]));
     }
 }

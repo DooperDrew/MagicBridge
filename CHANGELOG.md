@@ -4,6 +4,39 @@ All development steps, hardware discoveries, architectural decisions, and commit
 
 ---
 
+## 2026-10-25 — Milestone 4: Custom Actions & Battery (Completed ✅)
+
+### M4.1 & M4.2 — Off-Thread Action Dispatcher & Direct Apple HID Battery Reader
+- Implemented `crates/agent/src/action_worker.rs`:
+  - Off-thread asynchronous action dispatcher using a bounded channel (`sync_channel(64)`).
+  - Guarantees zero blocking on the `WH_KEYBOARD_LL` input hook (`NFR-P3`).
+  - Supports `Launch { program, args }`, `OpenUrl { url }` via `ShellExecuteW`, `Shortcut` (multi-key sequences), and `Media` actions.
+- Implemented `crates/agent/src/battery.rs`:
+  - Direct Apple HID Input Report `0x90` reader on collection `0xFF00:0x0014` via `HidD_GetInputReport`.
+  - Works identically on both USB (`MI_00&Col02`) and Bluetooth (`Col02`).
+  - Decodes charging/discharging/AC present bitflags and battery percentage (`0..100%`).
+  - Fallback support for Bluetooth PnP battery property (`PKEY_BLUETOOTH_BATTERY`).
+- Low-frequency polling & toast alerts in `crates/agent/src/window.rs`:
+  - Win32 periodic timer (`SetTimer` `IDT_BATTERY_TIMER`) based on `config.battery_poll_minutes` (default 10 min, zero busy loops).
+  - Immediate poll on device arrival (`DBT_DEVICEARRIVAL`) and wake from sleep (`WM_POWERBROADCAST`).
+  - Windows notification balloon/toast alert when battery drops below `low_battery_threshold_percent` (15%).
+- Subagent: `T3-Battery-M4` (inherit/pro).
+
+---
+
+## 2026-10-25 — Milestone 3: Fn Layer & Top Row Modes (Completed ✅)
+
+### M3.1..M3.4 — Top Row Special Keys, Media Switching & Navigation Combos
+- Implemented top row shortcuts and mode switching:
+  - F3 (Mission Control) -> Windows Task View (`Win + Tab`) via atomic multi-key shortcut synthesis.
+  - F4 (Launchpad) -> Windows Start Menu (`VK_LWIN`).
+  - F7..F12 -> Media keys (Rewind, Play/Pause, Fast Forward, Mute, Volume Down, Volume Up).
+  - `TopRowMode::MediaKeysFirst` vs. `TopRowMode::FKeysFirst` toggles smoothly between direct press and Fn+press.
+  - Built-in navigation combos: `Fn + Arrows` -> `Home/End/PgUp/PgDn`, `Fn + Backspace` -> `Forward Delete (⌦)`, `Fn + Enter` -> `Insert`.
+- Subagent: `T2-TopRow-M3` (flash/pro).
+
+---
+
 ## 2026-10-25 — Milestone 2: Remapping Engine (Completed ✅)
 
 ### M2.2 & M2.5 — Low-Level Hook, SendInput Injector, AltGr Suppression & Named Pipe IPC

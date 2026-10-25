@@ -181,6 +181,7 @@ impl fmt::Display for KeyAction {
         match self {
             Self::Key(k) => f.write_str(k),
             Self::Custom(CustomAction::Launch { command }) => write!(f, "Launch: {command}"),
+            Self::Custom(CustomAction::OpenUrl { url }) => write!(f, "OpenUrl: {url}"),
             Self::Custom(CustomAction::Media { command }) => write!(f, "Media: {command}"),
             Self::Custom(CustomAction::Shortcut { keys }) => {
                 write!(f, "Shortcut: {}", keys.join("+"))
@@ -195,6 +196,9 @@ impl fmt::Display for KeyAction {
 pub enum CustomAction {
     /// Launch an external program, file or URL.
     Launch { command: String },
+    /// Open a URL or document via the default shell handler (ShellExecuteW).
+    #[serde(alias = "open_url", alias = "url")]
+    OpenUrl { url: String },
     /// Execute a media action.
     Media { command: String },
     /// Send a key combination.

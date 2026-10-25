@@ -554,6 +554,10 @@ pub fn parse_key_name(s: &str) -> Option<u16> {
         "apps" | "menu" | "contextmenu" => Some(VK_APPS),
 
         // Modifiers (F3.1, F3.2)
+        "ctrl" | "control" => Some(VK_CONTROL),
+        "alt" | "option" | "opt" => Some(VK_MENU),
+        "shift" => Some(VK_SHIFT),
+        "cmd" | "command" | "win" | "windows" => Some(VK_LWIN),
         "leftcommand" | "leftcmd" | "cmdleft" | "commandleft" | "lwin" | "leftwin" | "winleft" => {
             Some(VK_LWIN)
         }

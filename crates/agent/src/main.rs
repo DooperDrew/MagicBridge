@@ -6,7 +6,9 @@
 // No console window in release builds; keep it in debug for diagnostics.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+pub mod action_worker;
 pub mod autostart;
+pub mod battery;
 pub mod device_notify;
 pub mod hook;
 pub mod injector;
@@ -50,6 +52,9 @@ fn main() {
     hook::set_active_table(table.clone());
     let atomic_table = AtomicMappingTable::new(table);
     let shared_state = Arc::new(Mutex::new(state.clone()));
+
+    // Start background action worker for custom actions (F5.1..F5.2, NFR-P3).
+    let _action_worker = action_worker::start_action_worker();
 
     // 4. Create hidden Win32 message window & system tray icon.
     let window = match MessageWindow::create(state) {

@@ -9,10 +9,11 @@ use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::WindowsAndMessaging::{
     CREATESTRUCTW, CreateWindowExW, DBT_DEVICEARRIVAL, DBT_DEVICEREMOVECOMPLETE, DefWindowProcW,
     DestroyWindow, DispatchMessageW, GWLP_USERDATA, GetMessageW, GetWindowLongPtrW, HCURSOR, HICON,
-    IsWindow, MSG, PBT_APMRESUMEAUTOMATIC, PBT_APMRESUMESUSPEND, PBT_APMSUSPEND, PostQuitMessage,
-    RegisterClassExW, RegisterWindowMessageW, SetWindowLongPtrW, TranslateMessage, WINDOW_EX_STYLE,
-    WM_COMMAND, WM_CREATE, WM_DESTROY, WM_DEVICECHANGE, WM_LBUTTONDBLCLK, WM_NCCREATE,
-    WM_NCDESTROY, WM_POWERBROADCAST, WM_RBUTTONUP, WNDCLASS_STYLES, WNDCLASSEXW, WS_OVERLAPPED,
+    IsWindow, KillTimer, MSG, PBT_APMRESUMEAUTOMATIC, PBT_APMRESUMESUSPEND, PBT_APMSUSPEND,
+    PostQuitMessage, RegisterClassExW, RegisterWindowMessageW, SetTimer, SetWindowLongPtrW,
+    TranslateMessage, WINDOW_EX_STYLE, WM_COMMAND, WM_CREATE, WM_DESTROY, WM_DEVICECHANGE,
+    WM_LBUTTONDBLCLK, WM_NCCREATE, WM_NCDESTROY, WM_POWERBROADCAST, WM_RBUTTONUP, WM_TIMER,
+    WNDCLASS_STYLES, WNDCLASSEXW, WS_OVERLAPPED,
 };
 use windows::core::{PCWSTR, w};
 
@@ -37,6 +38,9 @@ pub const TASKBAR_CREATED_STR: PCWSTR = w!("TaskbarCreated");
 /// WM_CONTEXTMENU message constant.
 pub const WM_CONTEXTMENU_VAL: u32 = 0x007B;
 
+/// Timer ID for low-frequency periodic battery polling (F6.3).
+pub const IDT_BATTERY_TIMER: usize = 100;
+
 /// Internal state owned by the window procedure.
 struct WindowData {
     state: DaemonState,
@@ -44,6 +48,8 @@ struct WindowData {
     device_notify: Option<DeviceNotificationHandle>,
     taskbar_created_msg: u32,
     hook: Option<HookHandle>,
+    low_battery_notified: bool,
+    battery_timer_minutes: u32,
 }
 
 impl WindowData {
@@ -52,6 +58,65 @@ impl WindowData {
         if let Some(profile) = self.state.config.active_profile() {
             let table = magicbridge_core::compile_profile(profile);
             crate::hook::set_active_table(table);
+        }
+    }
+
+    /// Configures or resets the periodic battery polling timer (F6.3, NFR-P2).
+    fn setup_battery_timer(&mut self, hwnd: HWND) {
+        let minutes = self.state.config.battery_poll_minutes.max(1);
+        self.battery_timer_minutes = minutes;
+        let interval_ms = minutes.saturating_mul(60 * 1000);
+        // SAFETY: SetTimer registers a periodic timer for hwnd with interval_ms.
+        unsafe {
+            let _ = SetTimer(Some(hwnd), IDT_BATTERY_TIMER, interval_ms, None);
+        }
+    }
+
+    /// Queries battery and updates tray tooltip + low battery notification (F6.1..F6.3).
+    fn poll_battery(&mut self) {
+        if !self.state.is_connected {
+            self.state.battery_percent = None;
+            self.low_battery_notified = false;
+            if let Some(ref tray) = self.tray {
+                tray.update_tooltip(&self.state);
+            }
+            return;
+        }
+
+        if let Some(status) = crate::battery::query_battery(&self.state.connected_devices) {
+            let old_pct = self.state.battery_percent;
+            self.state.battery_percent = Some(status.percentage);
+
+            if let Some(ref tray) = self.tray {
+                tray.update_tooltip(&self.state);
+            }
+
+            self.check_low_battery_notification(old_pct, status);
+        }
+    }
+
+    /// Checks if a low-battery notification should be displayed once per discharge cycle (F6.2).
+    fn check_low_battery_notification(
+        &mut self,
+        _old_pct: Option<u8>,
+        status: crate::battery::BatteryStatus,
+    ) {
+        let threshold = self.state.config.low_battery_threshold_percent;
+        if status.percentage <= threshold {
+            if !self.low_battery_notified && !status.is_charging {
+                self.low_battery_notified = true;
+                if let Some(ref tray) = self.tray {
+                    let title = "MagicBridge — Low Battery";
+                    let msg = format!(
+                        "Magic Keyboard battery is low ({}%). Connect a charging cable.",
+                        status.percentage
+                    );
+                    tray.show_notification(title, &msg);
+                }
+            }
+        } else {
+            // Reset latch when battery rises above threshold (e.g. after charging)
+            self.low_battery_notified = false;
         }
     }
 
@@ -127,6 +192,8 @@ impl MessageWindow {
             device_notify: None,
             taskbar_created_msg,
             hook: None,
+            low_battery_notified: false,
+            battery_timer_minutes: 0,
         });
         let raw_ptr = Box::into_raw(window_data);
 
@@ -234,6 +301,10 @@ unsafe extern "system" fn wnd_proc(
                 Ok(tray) => data.tray = Some(tray),
                 Err(e) => eprintln!("Failed to initialize system tray icon: {e}"),
             }
+
+            // 5. Setup periodic battery timer and perform initial battery read (F6.1..F6.3).
+            data.setup_battery_timer(hwnd);
+            data.poll_battery();
             LRESULT(0)
         }
         WM_DEVICECHANGE => {
@@ -250,6 +321,7 @@ unsafe extern "system" fn wnd_proc(
                         );
                         data.state.on_device_arrival(&path, &transport_str);
                         data.update_hook_state();
+                        data.poll_battery();
                         if let Some(ref tray) = data.tray {
                             tray.update_tooltip(&data.state);
                         }
@@ -268,6 +340,7 @@ unsafe extern "system" fn wnd_proc(
                             data.state.sync_connected_devices(&devices);
                         }
                         data.update_hook_state();
+                        data.poll_battery();
                         if let Some(ref tray) = data.tray {
                             tray.update_tooltip(&data.state);
                         }
@@ -293,6 +366,7 @@ unsafe extern "system" fn wnd_proc(
                     let devices = probe_connected_apple_keyboards();
                     data.state.sync_connected_devices(&devices);
                     data.update_hook_state();
+                    data.poll_battery();
                     if let Some(ref tray) = data.tray {
                         tray.update_tooltip(&data.state);
                     }
@@ -300,6 +374,12 @@ unsafe extern "system" fn wnd_proc(
                 _ => {}
             }
             LRESULT(1)
+        }
+        WM_TIMER => {
+            if wparam.0 == IDT_BATTERY_TIMER {
+                data.poll_battery();
+            }
+            LRESULT(0)
         }
         WM_TRAY_CALLBACK => {
             let event = lparam.0 as u32;
@@ -319,6 +399,10 @@ unsafe extern "system" fn wnd_proc(
         crate::ipc::WM_IPC_STATE_UPDATED => {
             data.recompile_active_table();
             data.update_hook_state();
+            if data.state.config.battery_poll_minutes != data.battery_timer_minutes {
+                data.setup_battery_timer(hwnd);
+            }
+            data.poll_battery();
             if let Some(ref tray) = data.tray {
                 tray.update_tooltip(&data.state);
             }
@@ -374,6 +458,11 @@ unsafe extern "system" fn wnd_proc(
             LRESULT(0)
         }
         WM_DESTROY => {
+            // Cancel periodic battery polling timer (F6.3).
+            // SAFETY: KillTimer cancels IDT_BATTERY_TIMER for this window.
+            unsafe {
+                let _ = KillTimer(Some(hwnd), IDT_BATTERY_TIMER);
+            }
             // Clean up device notification registration, hook, and tray icon before window is gone.
             data.hook.take();
             data.device_notify.take();

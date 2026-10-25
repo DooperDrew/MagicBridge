@@ -13,11 +13,12 @@ use crate::config::{
     CustomAction, FnKeyChoice, KeyAction, ModifierPreset, NamedProfile, TopRowMode,
 };
 use crate::key::{
-    Key, SC_ISO_ALTGR_SYNTHETIC_LCTRL, VK_BACK, VK_DELETE, VK_DOWN, VK_END, VK_F7, VK_F8, VK_F9,
-    VK_F10, VK_F11, VK_F12, VK_F13, VK_F14, VK_F15, VK_F19, VK_HOME, VK_INSERT, VK_LCONTROL,
-    VK_LEFT, VK_LMENU, VK_LWIN, VK_MEDIA_NEXT_TRACK, VK_MEDIA_PLAY_PAUSE, VK_MEDIA_PREV_TRACK,
-    VK_NEXT, VK_PAUSE, VK_PRIOR, VK_RCONTROL, VK_RETURN, VK_RIGHT, VK_RMENU, VK_RWIN, VK_SCROLL,
-    VK_SNAPSHOT, VK_UP, VK_VOLUME_DOWN, VK_VOLUME_MUTE, VK_VOLUME_UP, parse_key_name,
+    Key, SC_ISO_ALTGR_SYNTHETIC_LCTRL, VK_BACK, VK_DELETE, VK_DOWN, VK_END, VK_F3, VK_F4, VK_F7,
+    VK_F8, VK_F9, VK_F10, VK_F11, VK_F12, VK_F13, VK_F14, VK_F15, VK_F19, VK_HOME, VK_INSERT,
+    VK_LCONTROL, VK_LEFT, VK_LMENU, VK_LWIN, VK_MEDIA_NEXT_TRACK, VK_MEDIA_PLAY_PAUSE,
+    VK_MEDIA_PREV_TRACK, VK_NEXT, VK_PAUSE, VK_PRIOR, VK_RCONTROL, VK_RETURN, VK_RIGHT, VK_RMENU,
+    VK_RWIN, VK_SCROLL, VK_SNAPSHOT, VK_TAB, VK_UP, VK_VOLUME_DOWN, VK_VOLUME_MUTE, VK_VOLUME_UP,
+    parse_key_name,
 };
 
 /// Action resulting from evaluating an intercepted keyboard event.
@@ -34,6 +35,13 @@ pub enum RemapAction {
         target_sc: u16,
         /// Whether the destination key requires `KEYEVENTF_EXTENDEDKEY` (`LLKHF_EXTENDED`).
         extended: bool,
+    },
+    /// Remaps the keystroke to a multi-key shortcut sequence (e.g. Win + Tab).
+    Shortcut {
+        /// Array of keys in the shortcut sequence (up to 4 keys).
+        keys: [Key; 4],
+        /// Number of valid keys in `keys` (`1..=4`).
+        len: u8,
     },
     /// Triggers an off-thread custom action (e.g. launch program, URL, or key combination).
     ///
@@ -70,6 +78,30 @@ impl RemapAction {
         Self::from_key(Key::from_vk(vk))
     }
 
+    /// Creates a shortcut action from a slice of [`Key`]s (up to 4 keys).
+    #[must_use]
+    pub const fn shortcut(keys: &[Key]) -> Self {
+        let mut arr = [Key::new(0, 0, false); 4];
+        let len = if keys.len() > 4 { 4 } else { keys.len() } as u8;
+        let mut i = 0;
+        while i < len as usize {
+            arr[i] = keys[i];
+            i += 1;
+        }
+        Self::Shortcut { keys: arr, len }
+    }
+
+    /// Creates a shortcut action from a slice of virtual key codes.
+    #[must_use]
+    pub fn shortcut_from_vks(vks: &[u16]) -> Self {
+        let mut keys = [Key::new(0, 0, false); 4];
+        let len = vks.len().min(4) as u8;
+        for (i, &vk) in vks.iter().take(4).enumerate() {
+            keys[i] = Key::from_vk(vk);
+        }
+        Self::Shortcut { keys, len }
+    }
+
     /// Returns `true` if this action is [`RemapAction::PassThrough`].
     #[must_use]
     pub const fn is_passthrough(&self) -> bool {
@@ -82,6 +114,12 @@ impl RemapAction {
         matches!(self, Self::Swallow)
     }
 
+    /// Returns `true` if this action is [`RemapAction::Shortcut`].
+    #[must_use]
+    pub const fn is_shortcut(&self) -> bool {
+        matches!(self, Self::Shortcut { .. })
+    }
+
     /// Returns the target [`Key`] representation if this action is [`RemapAction::RemapKey`].
     #[must_use]
     pub const fn target_key(&self) -> Option<Key> {
@@ -91,6 +129,15 @@ impl RemapAction {
                 target_sc,
                 extended,
             } => Some(Key::new(target_vk, target_sc, extended)),
+            _ => None,
+        }
+    }
+
+    /// Returns the slice of keys if this action is a [`RemapAction::Shortcut`].
+    #[must_use]
+    pub fn shortcut_keys(&self) -> Option<&[Key]> {
+        match self {
+            Self::Shortcut { keys, len } => Some(&keys[..*len as usize]),
             _ => None,
         }
     }
@@ -279,7 +326,12 @@ pub fn compile_profile(profile: &NamedProfile) -> CompiledMappingTable {
     fn_layer[VK_F14 as usize] = scr_lk;
     fn_layer[VK_F15 as usize] = pause;
 
-    // 3. Top Row Mode (F2.1, F2.3)
+    // 3. Top Row Mode (F2.1..F2.5)
+    // F3: Mission Control -> Windows Task View (Win + Tab)
+    let task_view = RemapAction::shortcut(&[Key::from_vk(VK_LWIN), Key::from_vk(VK_TAB)]);
+    // F4: Launchpad -> Windows Start Menu (Win key)
+    let start_menu = RemapAction::from_vk(VK_LWIN);
+
     let media_prev = RemapAction::from_vk(VK_MEDIA_PREV_TRACK);
     let media_play = RemapAction::from_vk(VK_MEDIA_PLAY_PAUSE);
     let media_next = RemapAction::from_vk(VK_MEDIA_NEXT_TRACK);
@@ -289,6 +341,9 @@ pub fn compile_profile(profile: &NamedProfile) -> CompiledMappingTable {
 
     match profile.top_row_mode {
         TopRowMode::MediaKeysFirst => {
+            // Standard press: special/media actions
+            normal_layer[VK_F3 as usize] = task_view;
+            normal_layer[VK_F4 as usize] = start_menu;
             normal_layer[VK_F7 as usize] = media_prev;
             normal_layer[VK_F8 as usize] = media_play;
             normal_layer[VK_F9 as usize] = media_next;
@@ -296,6 +351,9 @@ pub fn compile_profile(profile: &NamedProfile) -> CompiledMappingTable {
             normal_layer[VK_F11 as usize] = media_vol_down;
             normal_layer[VK_F12 as usize] = media_vol_up;
 
+            // Fn + press: standard function keys
+            fn_layer[VK_F3 as usize] = RemapAction::from_vk(VK_F3);
+            fn_layer[VK_F4 as usize] = RemapAction::from_vk(VK_F4);
             fn_layer[VK_F7 as usize] = RemapAction::from_vk(VK_F7);
             fn_layer[VK_F8 as usize] = RemapAction::from_vk(VK_F8);
             fn_layer[VK_F9 as usize] = RemapAction::from_vk(VK_F9);
@@ -304,6 +362,10 @@ pub fn compile_profile(profile: &NamedProfile) -> CompiledMappingTable {
             fn_layer[VK_F12 as usize] = RemapAction::from_vk(VK_F12);
         }
         TopRowMode::FKeysFirst => {
+            // Standard press: standard function keys (pass through)
+            // Fn + press: special/media actions
+            fn_layer[VK_F3 as usize] = task_view;
+            fn_layer[VK_F4 as usize] = start_menu;
             fn_layer[VK_F7 as usize] = media_prev;
             fn_layer[VK_F8 as usize] = media_play;
             fn_layer[VK_F9 as usize] = media_next;
@@ -386,6 +448,27 @@ fn compile_key_action(action: &KeyAction, custom_actions: &mut Vec<CustomAction>
             }
         }
         KeyAction::Custom(custom) => {
+            if let CustomAction::Shortcut { keys } = custom
+                && !keys.is_empty()
+                && keys.len() <= 4
+            {
+                let mut parsed = [Key::new(0, 0, false); 4];
+                let mut all_valid = true;
+                for (i, k_str) in keys.iter().enumerate() {
+                    if let Some(vk) = parse_key_name(k_str) {
+                        parsed[i] = Key::from_vk(vk);
+                    } else {
+                        all_valid = false;
+                        break;
+                    }
+                }
+                if all_valid {
+                    return RemapAction::Shortcut {
+                        keys: parsed,
+                        len: keys.len() as u8,
+                    };
+                }
+            }
             let id = custom_actions.len() as u32;
             custom_actions.push(custom.clone());
             RemapAction::CustomAction(id)
@@ -398,9 +481,9 @@ mod tests {
     use super::*;
     use crate::config::{KeyboardLayout, ModifierPreset, NamedProfile, TopRowMode};
     use crate::key::{
-        VK_A, VK_DELETE, VK_END, VK_F13, VK_F14, VK_F15, VK_HOME, VK_INSERT, VK_LCONTROL, VK_LMENU,
-        VK_LWIN, VK_MEDIA_NEXT_TRACK, VK_MEDIA_PLAY_PAUSE, VK_MEDIA_PREV_TRACK, VK_NEXT, VK_PAUSE,
-        VK_PRIOR, VK_RCONTROL, VK_RETURN, VK_RMENU, VK_RWIN, VK_SCROLL, VK_SNAPSHOT,
+        VK_A, VK_DELETE, VK_END, VK_F13, VK_F14, VK_F15, VK_F16, VK_HOME, VK_INSERT, VK_LCONTROL,
+        VK_LMENU, VK_LWIN, VK_MEDIA_NEXT_TRACK, VK_MEDIA_PLAY_PAUSE, VK_MEDIA_PREV_TRACK, VK_NEXT,
+        VK_PAUSE, VK_PRIOR, VK_RCONTROL, VK_RETURN, VK_RMENU, VK_RWIN, VK_SCROLL, VK_SNAPSHOT,
         VK_VOLUME_DOWN, VK_VOLUME_MUTE, VK_VOLUME_UP,
     };
 
@@ -650,6 +733,17 @@ mod tests {
         profile.top_row_mode = TopRowMode::MediaKeysFirst;
         let table_media = compile_profile(&profile);
 
+        // Media first: F3 -> Task View (Win + Tab), F4 -> Start Menu (Win)
+        let expected_task_view =
+            RemapAction::shortcut(&[Key::from_vk(VK_LWIN), Key::from_vk(VK_TAB)]);
+        assert_eq!(table_media.lookup(VK_F3, false), expected_task_view);
+        assert_eq!(
+            table_media.lookup(VK_F4, false),
+            RemapAction::from_vk(VK_LWIN)
+        );
+        assert_eq!(table_media.lookup(VK_F3, true), RemapAction::from_vk(VK_F3));
+        assert_eq!(table_media.lookup(VK_F4, true), RemapAction::from_vk(VK_F4));
+
         // Media first: normal layer has media keys, Fn layer has F-keys
         assert_eq!(
             table_media.lookup(VK_F7, false),
@@ -686,7 +780,17 @@ mod tests {
         profile.top_row_mode = TopRowMode::FKeysFirst;
         let table_fkeys = compile_profile(&profile);
 
+        // F-keys first: standard press passes through as standard F-keys
+        assert_eq!(table_fkeys.lookup(VK_F3, false), RemapAction::PassThrough);
+        assert_eq!(table_fkeys.lookup(VK_F4, false), RemapAction::PassThrough);
         assert_eq!(table_fkeys.lookup(VK_F7, false), RemapAction::PassThrough);
+
+        // Fn layer has special/media actions
+        assert_eq!(table_fkeys.lookup(VK_F3, true), expected_task_view);
+        assert_eq!(
+            table_fkeys.lookup(VK_F4, true),
+            RemapAction::from_vk(VK_LWIN)
+        );
         assert_eq!(
             table_fkeys.lookup(VK_F7, true),
             RemapAction::from_vk(VK_MEDIA_PREV_TRACK)
@@ -695,6 +799,24 @@ mod tests {
             table_fkeys.lookup(VK_F12, true),
             RemapAction::from_vk(VK_VOLUME_UP)
         );
+    }
+
+    #[test]
+    fn test_shortcut_custom_action_compilation() {
+        let mut profile = NamedProfile::default_it();
+        profile.mappings.insert(
+            "F16".to_string(),
+            KeyAction::Custom(CustomAction::Shortcut {
+                keys: vec!["Win".to_string(), "Tab".to_string()],
+            }),
+        );
+        let table = compile_profile(&profile);
+        let action = table.lookup(VK_F16, false);
+        assert!(action.is_shortcut());
+        let keys = action.shortcut_keys().unwrap();
+        assert_eq!(keys.len(), 2);
+        assert_eq!(keys[0], Key::from_vk(VK_LWIN));
+        assert_eq!(keys[1], Key::from_vk(VK_TAB));
     }
 
     #[test]

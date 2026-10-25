@@ -2,8 +2,8 @@
 
 use windows::Win32::Foundation::{HWND, LPARAM, POINT, WPARAM};
 use windows::Win32::UI::Shell::{
-    NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NIM_DELETE, NIM_MODIFY, NOTIFYICONDATAW,
-    Shell_NotifyIconW,
+    NIF_ICON, NIF_INFO, NIF_MESSAGE, NIF_TIP, NIIF_WARNING, NIM_ADD, NIM_DELETE, NIM_MODIFY,
+    NOTIFYICONDATAW, Shell_NotifyIconW,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     AppendMenuW, CreatePopupMenu, DestroyMenu, GetCursorPos, HICON, IDI_APPLICATION, LoadIconW,
@@ -32,15 +32,23 @@ pub const IDM_PROFILE_BASE: usize = 2000;
 
 /// Copies a string slice into a fixed-size UTF-16 null-terminated buffer.
 pub fn copy_to_sz_tip(dest: &mut [u16; 128], text: &str) {
+    copy_to_sz_buf(dest, text);
+}
+
+/// Copies a string slice into a variable-length UTF-16 null-terminated slice buffer.
+pub fn copy_to_sz_buf(dest: &mut [u16], text: &str) {
+    let max = dest.len().saturating_sub(1);
     let mut i = 0;
     for c in text.encode_utf16() {
-        if i >= 127 {
+        if i >= max {
             break;
         }
         dest[i] = c;
         i += 1;
     }
-    dest[i] = 0;
+    if !dest.is_empty() {
+        dest[i] = 0;
+    }
 }
 
 /// System tray icon wrapper.
@@ -112,6 +120,26 @@ impl TrayIcon {
         copy_to_sz_tip(&mut nid.szTip, &tooltip);
 
         // SAFETY: `nid` is initialized with valid window handle and ID.
+        unsafe {
+            let _ = Shell_NotifyIconW(NIM_MODIFY, &nid);
+        }
+    }
+
+    /// Displays a balloon or toast notification from the system tray icon (F6.2).
+    pub fn show_notification(&self, title: &str, message: &str) {
+        let mut nid = NOTIFYICONDATAW {
+            cbSize: std::mem::size_of::<NOTIFYICONDATAW>() as u32,
+            hWnd: self.hwnd,
+            uID: TRAY_ICON_ID,
+            uFlags: NIF_INFO,
+            dwInfoFlags: NIIF_WARNING,
+            ..Default::default()
+        };
+
+        copy_to_sz_buf(&mut nid.szInfoTitle, title);
+        copy_to_sz_buf(&mut nid.szInfo, message);
+
+        // SAFETY: `nid` is initialized with valid window handle, NIF_INFO, title, and body.
         unsafe {
             let _ = Shell_NotifyIconW(NIM_MODIFY, &nid);
         }

@@ -48,6 +48,15 @@ pub enum HookAction {
     InjectKeyDown(Key),
     /// Swallow original event and inject synthetic key-up.
     InjectKeyUp(Key),
+    /// Swallow original event and inject synthetic shortcut combo.
+    InjectShortcut {
+        /// Keys in the shortcut combo.
+        keys: [Key; 4],
+        /// Number of valid keys in the combo.
+        len: u8,
+    },
+    /// Swallow original event and trigger off-thread custom action by ID (NFR-P3).
+    TriggerCustomAction(u32),
 }
 
 /// Active state tracking for virtual keys `0..=255`.
@@ -119,6 +128,15 @@ pub fn clear_active_table() {
 #[must_use]
 pub fn has_active_table() -> bool {
     !ACTIVE_TABLE.load(Ordering::Acquire).is_null()
+}
+
+/// Retrieves a cloned custom action from the active table for off-thread execution.
+#[must_use]
+pub fn get_active_custom_action(id: u32) -> Option<magicbridge_core::CustomAction> {
+    let guard = TABLE_HOLDER.lock().unwrap();
+    guard
+        .as_ref()
+        .and_then(|t| t.get_custom_action(id).cloned())
 }
 
 /// Returns whether the Fn modifier key is currently held down.
@@ -250,9 +268,13 @@ pub fn process_keyboard_event(
                         ACTIVE_REMAPS[idx].store(encode_remap(target), Ordering::Relaxed);
                         HookAction::InjectKeyDown(target)
                     }
-                    RemapAction::CustomAction(_id) => {
+                    RemapAction::Shortcut { keys, len } => {
                         ACTIVE_REMAPS[idx].store(1, Ordering::Relaxed);
-                        HookAction::Swallow
+                        HookAction::InjectShortcut { keys, len }
+                    }
+                    RemapAction::CustomAction(id) => {
+                        ACTIVE_REMAPS[idx].store(1, Ordering::Relaxed);
+                        HookAction::TriggerCustomAction(id)
                     }
                 }
             }
@@ -328,6 +350,14 @@ pub unsafe extern "system" fn low_level_keyboard_proc(
         }
         HookAction::InjectKeyUp(target) => {
             injector::send_key_up(target.vk, target.scan_code, target.extended);
+            LRESULT(1)
+        }
+        HookAction::InjectShortcut { keys, len } => {
+            injector::send_shortcut(&keys[..len as usize]);
+            LRESULT(1)
+        }
+        HookAction::TriggerCustomAction(id) => {
+            crate::action_worker::dispatch_action(id);
             LRESULT(1)
         }
     }
@@ -597,6 +627,39 @@ mod tests {
 
         clear_active_table();
         assert!(!has_active_table());
+    }
+
+    #[test]
+    fn test_custom_action_event_flow() {
+        use magicbridge_core::config::{CustomAction, KeyAction};
+        use magicbridge_core::key::VK_F16;
+
+        let _guard = TEST_MUTEX.lock().unwrap();
+        reset_test_state();
+        let mut profile = NamedProfile::default_it();
+        profile.mappings.insert(
+            "F16".to_string(),
+            KeyAction::Custom(CustomAction::Launch {
+                command: "calc.exe".to_string(),
+            }),
+        );
+        let table = compile_profile(&profile);
+
+        // F16 down -> TriggerCustomAction(0)
+        let res_down = process_keyboard_event(0, WM_KEYDOWN, VK_F16, 0x67, 0, Some(&table), true);
+        assert_eq!(res_down, HookAction::TriggerCustomAction(0));
+
+        // F16 repeat down -> Swallow (do not retrigger on repeat)
+        let res_repeat = process_keyboard_event(0, WM_KEYDOWN, VK_F16, 0x67, 0, Some(&table), true);
+        assert_eq!(res_repeat, HookAction::Swallow);
+
+        // F16 up -> Swallow
+        let res_up = process_keyboard_event(0, WM_KEYUP, VK_F16, 0x67, 0, Some(&table), true);
+        assert_eq!(res_up, HookAction::Swallow);
+
+        // Subsequent up when already cleared -> CallNextHook
+        let res_up2 = process_keyboard_event(0, WM_KEYUP, VK_F16, 0x67, 0, Some(&table), true);
+        assert_eq!(res_up2, HookAction::CallNextHook);
     }
 
     #[test]

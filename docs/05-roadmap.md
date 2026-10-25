@@ -37,14 +37,16 @@ Goal: learn exactly what the A1843 sends on Windows, over USB and Bluetooth.
 **Exit:** remaps work in Notepad, browser, and one game; no stuck keys after rapid typing or killing the agent. — **MILESTONE 2 COMPLETE ✅**
 
 ## M3 — Fn layer & top row
-- [ ] `[T3]` M3.1 Configurable Fn key per `hardware-findings.md` (default Right Option / `VK_RMENU`).
-- [ ] `[T2]` M3.2 Fn combos (arrows, Backspace, Enter).
-- [ ] `[T2]` M3.3 Top-row Media-first / F-keys-first modes + tray toggle.
-- [ ] `[T2]` M3.4 Task View / Start for F3/F4; brightness best effort (Could).
+- [x] `[T3]` M3.1 Configurable Fn key per `hardware-findings.md` (default Right Option / `VK_RMENU`). _(2026-10-25 — M3.1 completed)_
+- [x] `[T2]` M3.2 Fn combos (arrows, Backspace, Enter). _(2026-10-25 — M3.2 completed)_
+- [x] `[T2]` M3.3 Top-row Media-first / F-keys-first modes + tray toggle. _(2026-10-25 — M3.3 completed)_
+- [x] `[T2]` M3.4 Task View / Start for F3/F4; brightness best effort (Could). _(2026-10-25 — M3.4 completed)_
+**Exit:** F3/F4 trigger Task View / Start, F7..F12 media keys toggle with Fn, navigation combos active. — **MILESTONE 3 COMPLETE ✅**
 
 ## M4 — Custom actions & battery
-- [ ] `[T2]` M4.1 Actions: key combo, launch program/URL, media action. Executed off the hook thread.
-- [ ] `[T3]` M4.2 Battery reading (`0xFF00:0x0014` report `0x90` + PnP fallback) + tray tooltip + low-battery notification.
+- [x] `[T2]` M4.1 Actions: key combo, launch program/URL, media action. Executed off the hook thread. _(2026-10-25 — M4.1 completed)_
+- [x] `[T3]` M4.2 Battery reading (`0xFF00:0x0014` report `0x90` + PnP fallback) + tray tooltip + low-battery notification. _(2026-10-25 — M4.2 completed)_
+**Exit:** direct HID battery reading over USB & BT, low-battery alert, async action dispatcher. — **MILESTONE 4 COMPLETE ✅**
 
 ## M5 — Settings GUI
 - [ ] `[T2]` M5.1 `settings` app shell (eframe), tabs, named-pipe client, "agent not running" banner.
