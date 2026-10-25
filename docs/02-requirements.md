@@ -1,12 +1,12 @@
 # 02 — Requirements
 
-> Status: **DRAFT**. Priorities use MoSCoW: **M**ust / **S**hould / **C**ould.
-> Requirements marked 🔬 depend on the outcome of the hardware spike (Milestone 0).
+> Status: **APPROVED (M0 spike resolved)**. Priorities use MoSCoW: **M**ust / **S**hould / **C**ould.
+> See [hardware-findings.md](hardware-findings.md) for the Milestone 0 hardware spike results.
 
 ## Functional requirements
 
-### F1 — Fn key & Fn layer 🔬 (M)
-- F1.1 The physical Fn key is detected on both USB and Bluetooth.
+### F1 — Fn key & Fn layer (M)
+- F1.1 Because Windows' inbox `kbdhid.sys` driver locks the A1843 keyboard collection exclusively and strips the vendor `0x00FF:0x0003` (`Fn`) and `0x000C:0x00B8` (`Eject`) usages in kernel mode (see [hardware-findings.md](hardware-findings.md) §3), the Fn layer is triggered by a configurable **Fn key** in user mode (default: **Right Option / `VK_RMENU`**, configurable to any key such as Right Control or `F19`).
 - F1.2 Default Fn combos:
 
   | Combo | Result |
@@ -18,10 +18,9 @@
   | Fn + F1…F12 | the "other" function of the top row (see F2) |
 
 - F1.3 The user can edit Fn combos in the GUI.
-- F1.4 **Fallback:** if the hardware spike shows Fn can't be read reliably, the user can
-  pick another key to act as Fn, e.g. Right Option.
+- F1.4 The user can pick which key acts as Fn (e.g. Right Option, Right Control, `F19`, or Disabled) in the GUI.
 
-### F2 — Top row: media keys vs F-keys 🔬 (M)
+### F2 — Top row: media keys vs F-keys (M)
 - F2.1 Two modes: **Media first** (press = media, Fn+press = F-key) and **F-keys first** (the reverse).
 - F2.2 The mode can be switched from the tray menu, the GUI, and an optional hotkey.
 - F2.3 Media actions: volume up/down/mute, play/pause, previous, next.
@@ -36,17 +35,17 @@
 - F3.3 Each modifier can be remapped individually.
 
 ### F4 — Missing Windows keys (M)
-- F4.1 Defaults: **F13 → Print Screen**, **F14 → Scroll Lock**, **F15 → Pause**, **Eject → configurable**
-  (default: none). Insert is reachable via F1.2.
-- F4.2 All of these can be remapped in the GUI.
+- F4.1 Defaults: **F13 → Print Screen**, **F14 → Scroll Lock**, **F15 → Pause**. Insert is reachable via F1.2.
+  *(Note: physical `Eject` is stripped by `kbdhid.sys` in kernel mode and does not reach user mode; see [hardware-findings.md](hardware-findings.md) §3.)*
+- F4.2 All remappable keys (`F13`–`F19`, `Clear`) can be remapped in the GUI.
 
-### F5 — Custom actions for F13–F19, Clear, Eject (S)
-- F5.1 Any of these keys can be mapped to: another key, a key combo, launching a program/file/URL,
+### F5 — Custom actions for F13–F19, Clear (S)
+- F5.1 Any of these keys (`F13`–`F19`, `Clear` / `VK_NUMLOCK`) can be mapped to: another key, a key combo, launching a program/file/URL,
   or a media action.
 - F5.2 Custom actions run without blocking the input path (see NFR-P3).
 
-### F6 — Battery 🔬 (S)
-- F6.1 The tray icon tooltip shows the battery % when connected over Bluetooth.
+### F6 — Battery (S)
+- F6.1 The tray icon tooltip shows the battery % (via Apple HID report `0x90` on `0xFF00:0x0014` and/or the Windows PnP Bluetooth battery property).
 - F6.2 A Windows notification appears once when battery < threshold (default 15%).
 - F6.3 Battery is polled infrequently (default every 10 min, configurable); no busy polling.
 
@@ -83,8 +82,8 @@
 
 ### Safety & compatibility
 - NFR-S1 No DLL injection, no kernel drivers, no admin rights needed for normal use.
-- NFR-S2 Only keys from the Apple keyboard are changed, where technically possible 🔬
-  (see [03-architecture.md](03-architecture.md) §Device filtering).
+- NFR-S2 Mappings are active while an Apple keyboard (`VID 0x05AC`) is connected and automatically pause when none is connected
+  (see [03-architecture.md](03-architecture.md) §Device filtering and [hardware-findings.md](hardware-findings.md) §6).
 - NFR-S3 If the agent crashes or is killed, the keyboard falls back to normal Windows behaviour.
   No stuck keys, no leftover system changes.
 - NFR-S4 No network access. No telemetry.

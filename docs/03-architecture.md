@@ -1,6 +1,6 @@
 # 03 — Architecture
 
-> Status: **DRAFT**. Items marked 🔬 must be confirmed by the Milestone 0 hardware spike.
+> Status: **APPROVED (M0 spike resolved)**. See [hardware-findings.md](hardware-findings.md) for hardware ground truth.
 
 ## Tech stack (decided — see [decisions/0001-rust.md](decisions/0001-rust.md))
 
@@ -59,24 +59,15 @@ needs a `// SAFETY:` comment. `magicbridge-core` also uses `#![forbid(unsafe_cod
 - Media actions use the standard virtual keys (`VK_VOLUME_UP`, `VK_MEDIA_PLAY_PAUSE`, …).
 - Custom actions (launching programs, etc.) are handed off to a worker thread, never run in the hook.
 
-### Apple-specific keys (Fn, Eject, battery) 🔬
-- Fn and Eject are likely reported in a **vendor-specific HID collection** (Apple VID `0x05AC`)
-  rather than as normal keys. The agent reads them through **Raw Input** (`RIDEV_INPUTSINK`) or
-  `HidD_*`/`ReadFile` on that collection, and keeps a shared atomic `fn_down` flag that the hook reads.
-- The exact report IDs, byte offsets, and whether this works the same on **USB and Bluetooth** are
-  **unknown until Milestone 0**. The results go into `docs/hardware-findings.md`.
-- Battery: read from a HID feature/input report or a Bluetooth device property, whichever the spike
-  shows works. Polled every N minutes (F6.3).
-- **Fallback:** if Fn can't be read, a user-chosen key acts as Fn (F1.4).
+### Apple-specific keys (Fn, Eject, battery) — resolved in [hardware-findings.md](hardware-findings.md)
+- **Fn & Eject:** On the A1843 (`05AC:026C`), `Apple Fn` (`0x00FF:0x0003`) and `Eject` (`0x000C:0x00B8`) are declared inside Input Report `0x01` of the main `0x0001:0x0006` (Generic Desktop / Keyboard) collection rather than in a separate vendor collection. Windows' `kbdhid.sys` locks `0x0001:0x0006` exclusively and discards non-`0x07` usages in kernel mode before `WH_KEYBOARD_LL` or `WM_INPUT`.
+- **Fn key implementation (F1.1, F1.4):** A user-configurable key acts as `Fn` (default: **Right Option / `VK_RMENU`**). The hook tracks `fn_down` directly in `WH_KEYBOARD_LL` (and suppresses the synthetic `AltGr` `LCtrl` `sc=0x21D` injected on ISO/Italian layouts when Right Option is remapped).
+- **Battery (F6):** Read via `HidD_GetInputReport(0x90)` on Apple collection `0xFF00:0x0014` (`[0x90, status, pct]`, works even on USB) with fallback to the Windows PnP `PKEY_BLUETOOTH_BATTERY` property on Bluetooth device nodes. Polled every N minutes (F6.3).
 
-### Device filtering 🔬
-- `WH_KEYBOARD_LL` doesn't say which keyboard an event came from. v1 approach:
-  - **Default:** assume the Apple keyboard is the main keyboard. Mappings apply globally while
-    an Apple keyboard is connected, and turn off automatically when none is connected.
-  - **Investigate in M0:** matching Raw Input (which includes the device handle) with hook events, so only
-    Apple-keyboard events get remapped.
-- A kernel filter driver (e.g. Interception) is **explicitly rejected**: it needs admin rights, is risky, and
-  can be flagged by anti-cheat software.
+### Device filtering — resolved in [hardware-findings.md](hardware-findings.md)
+- In Milestone 0 (`target\usb-dump.log`), `WM_INPUT` (`RAWKB`, which carries `hDevice`) always arrived **0.43–1.76 ms after** `WH_KEYBOARD_LL` (`HOOK`), because Windows runs low-level hooks synchronously before queueing `WM_INPUT`. Per-keystroke device filtering inside `WH_KEYBOARD_LL` is therefore not possible without blocking the input thread.
+- **Selected approach:** Mappings apply globally while an Apple keyboard (`VID 0x05AC`) is connected (tracked via event-driven device arrival/removal notifications) and turn off automatically when none is connected.
+- A kernel filter driver (e.g. Interception) is **explicitly rejected**: it needs admin rights, is risky, and can be flagged by anti-cheat software.
 
 ### Config & IPC
 - `config.toml` is the single source of truth. The GUI writes it atomically (temp file + rename).
