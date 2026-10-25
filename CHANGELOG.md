@@ -1,4 +1,4 @@
-# Development & Knowledge Log (`CHANGELOG.md`)
+﻿# Development & Knowledge Log (`CHANGELOG.md`)
 
 All development steps, hardware discoveries, architectural decisions, and commits are logged here in chronological order for future reference.
 
@@ -276,4 +276,4 @@ All development steps, hardware discoveries, architectural decisions, and commit
 
 ### Scope & Workflow Alignment — Profiles, Multi-Language Layouts & GitHub Tracking
 - Added requirement **F7.7** for **named profiles** and **multiple language/physical keyboard layouts** (`ISO Italian`, `ANSI US`, `ISO UK`, `ISO German`, `ISO French`, plus custom labels), switchable from the tray menu, GUI, or hotkey.
-- Made the GitHub repository (`DooperDrew/test-repo-antigravity`) public, added `CHANGELOG.md`, and created GitHub Issues for all milestones (`M0`–`M7`).
+- Made the GitHub repository (`DooperDrew/MagicBridge`) public, added `CHANGELOG.md`, and created GitHub Issues for all milestones (`M0`–`M7`).

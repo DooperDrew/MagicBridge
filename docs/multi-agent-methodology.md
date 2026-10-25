@@ -1,8 +1,8 @@
-# Multi-Agent Parallel Architecture & Methodology Guide
+﻿# Multi-Agent Parallel Architecture & Methodology Guide
 
 > **Audience:** AI Engineers, System Architects, Open-Source Contributors, and Autonomous Agents.  
 > **Status:** Canonical Living Document (Milestone 8).  
-> **Repository:** [`https://github.com/DooperDrew/test-repo-antigravity`](https://github.com/DooperDrew/test-repo-antigravity)
+> **Repository:** [`https://github.com/DooperDrew/MagicBridge`](https://github.com/DooperDrew/MagicBridge)
 
 ---
 

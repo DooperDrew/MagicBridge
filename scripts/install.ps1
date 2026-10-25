@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Installs MagicBridge for the current user without requiring Administrator privileges.
 
@@ -222,9 +222,9 @@ Set-ItemProperty -Path $UninstallKey -Name "UninstallString" -Value "powershell.
 Set-ItemProperty -Path $UninstallKey -Name "QuietUninstallString" -Value "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$TargetDir\uninstall.ps1`" -Silent"
 Set-ItemProperty -Path $UninstallKey -Name "InstallDate" -Value ((Get-Date).ToString("yyyyMMdd"))
 Set-ItemProperty -Path $UninstallKey -Name "EstimatedSize" -Value $EstimatedKB -Type DWord
-Set-ItemProperty -Path $UninstallKey -Name "URLInfoAbout" -Value "https://github.com/DooperDrew/test-repo-antigravity"
-Set-ItemProperty -Path $UninstallKey -Name "HelpLink" -Value "https://github.com/DooperDrew/test-repo-antigravity/issues"
-Set-ItemProperty -Path $UninstallKey -Name "URLUpdateInfo" -Value "https://github.com/DooperDrew/test-repo-antigravity/releases"
+Set-ItemProperty -Path $UninstallKey -Name "URLInfoAbout" -Value "https://github.com/DooperDrew/MagicBridge"
+Set-ItemProperty -Path $UninstallKey -Name "HelpLink" -Value "https://github.com/DooperDrew/MagicBridge/issues"
+Set-ItemProperty -Path $UninstallKey -Name "URLUpdateInfo" -Value "https://github.com/DooperDrew/MagicBridge/releases"
 Set-ItemProperty -Path $UninstallKey -Name "NoModify" -Value 1 -Type DWord
 Set-ItemProperty -Path $UninstallKey -Name "NoRepair" -Value 1 -Type DWord
 

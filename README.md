@@ -4,7 +4,7 @@
 
 **A tiny, invisible, native Windows 10/11 utility that makes the Apple Magic Keyboard with Numeric Keypad (A1843) feel right at home on Windows.**
 
-[![Latest Release](https://img.shields.io/github/v/release/DooperDrew/test-repo-antigravity?logo=github&label=release%20v0.2.0)](https://github.com/DooperDrew/test-repo-antigravity/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/DooperDrew/MagicBridge?logo=github&label=release%20v0.2.0)](https://github.com/DooperDrew/MagicBridge/releases/latest)
 [![Rust Stable](https://img.shields.io/badge/rust-stable-brightgreen.svg)](https://www.rust-lang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform: Windows 10/11 x64](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-informational.svg)](https://microsoft.com/windows)
@@ -15,6 +15,7 @@
 [Features](#key-features) •
 [Architecture](#architecture-overview) •
 [User Guide](docs/user-guide.md) •
+[Release Guide](docs/release-methodology.md) •
 [Multi-Agent Guide](docs/multi-agent-methodology.md) •
 [Building & Running](#building--running) •
 [Roadmap](#roadmap--milestones) •
@@ -157,15 +158,15 @@ Compiled binaries will be located in `target/release/` (`magicbridge-agent.exe` 
 
 Progress is tracked via GitHub Milestones and Issues:
 
-- [x] **[M0: Hardware Spike 🔬](https://github.com/DooperDrew/test-repo-antigravity/issues/1)** — Verified USB/BT descriptors, battery report `0x90`, timing benchmarks, and the `AltGr` scancode `0x21D` quirk. See [docs/hardware-findings.md](docs/hardware-findings.md).
-- [x] **[M1: Agent Skeleton](https://github.com/DooperDrew/test-repo-antigravity/issues/2)** — Single-instance tray app, config schema, autostart, and device lifecycle handling.
-- [x] **[M2: Remapping Engine](https://github.com/DooperDrew/test-repo-antigravity/issues/3)** — Zero-allocation `WH_KEYBOARD_LL` hook, atomic table swapping, modifier presets, and self-injection prevention.
-- [x] **[M3: Fn Layer & Top Row](https://github.com/DooperDrew/test-repo-antigravity/issues/4)** — Configurable Fn trigger key, Fn combos, and Media vs. F-keys toggle.
-- [x] **[M4: Custom Actions & Battery](https://github.com/DooperDrew/test-repo-antigravity/issues/5)** — Off-thread macro execution and background battery monitoring.
-- [x] **[M5: Settings GUI](https://github.com/DooperDrew/test-repo-antigravity/issues/8)** — Visual A1843 layout editor, multi-language presets, and profile manager.
-- [x] **[M6: Hardening & Performance](https://github.com/DooperDrew/test-repo-antigravity/issues/6)** — Soak testing, sleep/resume validation, and strict latency measurement.
-- [x] **[M7: Packaging & Release](https://github.com/DooperDrew/test-repo-antigravity/issues/7)** — Standalone portable zip and installer.
-- [x] **[M8: Multi-Agent Methodology & Architecture](https://github.com/DooperDrew/test-repo-antigravity/issues/9)** — Didactic multi-agent parallelization documentation, Settings architecture tab, and GitHub Release v0.1.0 parity. See [docs/multi-agent-methodology.md](docs/multi-agent-methodology.md).
+- [x] **[M0: Hardware Spike 🔬](https://github.com/DooperDrew/MagicBridge/issues/1)** — Verified USB/BT descriptors, battery report `0x90`, timing benchmarks, and the `AltGr` scancode `0x21D` quirk. See [docs/hardware-findings.md](docs/hardware-findings.md).
+- [x] **[M1: Agent Skeleton](https://github.com/DooperDrew/MagicBridge/issues/2)** — Single-instance tray app, config schema, autostart, and device lifecycle handling.
+- [x] **[M2: Remapping Engine](https://github.com/DooperDrew/MagicBridge/issues/3)** — Zero-allocation `WH_KEYBOARD_LL` hook, atomic table swapping, modifier presets, and self-injection prevention.
+- [x] **[M3: Fn Layer & Top Row](https://github.com/DooperDrew/MagicBridge/issues/4)** — Configurable Fn trigger key, Fn combos, and Media vs. F-keys toggle.
+- [x] **[M4: Custom Actions & Battery](https://github.com/DooperDrew/MagicBridge/issues/5)** — Off-thread macro execution and background battery monitoring.
+- [x] **[M5: Settings GUI](https://github.com/DooperDrew/MagicBridge/issues/8)** — Visual A1843 layout editor, multi-language presets, and profile manager.
+- [x] **[M6: Hardening & Performance](https://github.com/DooperDrew/MagicBridge/issues/6)** — Soak testing, sleep/resume validation, and strict latency measurement.
+- [x] **[M7: Packaging & Release](https://github.com/DooperDrew/MagicBridge/issues/7)** — Standalone portable zip and installer.
+- [x] **[M8: Multi-Agent Methodology & Architecture](https://github.com/DooperDrew/MagicBridge/issues/9)** — Didactic multi-agent parallelization documentation, Settings architecture tab, and GitHub Release v0.1.0 parity. See [docs/multi-agent-methodology.md](docs/multi-agent-methodology.md).
 - [ ] **M9: Quality Assurance & Empirical Validation** — Physical A1843 hardware matrix execution, sleep/resume, game mode auto-pause, and security verification. See [docs/06-qa-and-validation.md](docs/06-qa-and-validation.md).
 - [ ] **M10: User Experience & Onboarding Improvements** — Guided installer wizard, first-run onboarding configuration wizard, responsive Settings layout, and live battery tray indicator. See [docs/07-ux-and-improvements.md](docs/07-ux-and-improvements.md).
 

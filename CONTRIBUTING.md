@@ -1,4 +1,4 @@
-# Contributing to MagicBridge
+﻿# Contributing to MagicBridge
 
 Thank you for your interest in contributing to **MagicBridge**! This document explains our principles, architectural constraints, development workflow, and coding guidelines.
 
@@ -75,7 +75,7 @@ cargo build --workspace --release
 
 ## 5. Working on Milestones & Issues
 
-We track our roadmap in [docs/05-roadmap.md](docs/05-roadmap.md) and through [GitHub Issues](https://github.com/DooperDrew/test-repo-antigravity/issues).
+We track our roadmap in [docs/05-roadmap.md](docs/05-roadmap.md) and through [GitHub Issues](https://github.com/DooperDrew/MagicBridge/issues).
 
 Before picking up a task:
 1. Review [docs/01-vision.md](docs/01-vision.md), [docs/02-requirements.md](docs/02-requirements.md), and [docs/03-architecture.md](docs/03-architecture.md).

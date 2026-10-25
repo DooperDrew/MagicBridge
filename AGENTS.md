@@ -1,7 +1,7 @@
-# AGENTS.md — Mandatory Operating Guidelines for AI Agents
+﻿# AGENTS.md — Mandatory Operating Guidelines for AI Agents
 
 > **CRITICAL FOR ALL AI AGENTS & CODING ASSISTANTS:**
-> You are working on **MagicBridge** (`https://github.com/DooperDrew/test-repo-antigravity`).
+> You are working on **MagicBridge** (`https://github.com/DooperDrew/MagicBridge`).
 > These guidelines are **strictly binding**. Every agent operating in this repository MUST comply with the workflow, architecture, performance budgets, sole committer protocol, and logging rules defined below without exception.
 
 ---
