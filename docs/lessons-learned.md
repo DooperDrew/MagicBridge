@@ -17,3 +17,6 @@ Living log of things that went wrong or surprisingly right, and the rule they pr
 | 2026-10-25 | packaging | `dist/*.zip` committed | Artifacts go to GitHub Releases only | [KIT ✓] |
 | 2026-10-25 | orchestration | Worker agent defined only in a chat | Persist agent definitions as files | [KIT ✓] |
 | 2026-10-25 | Italian ISO | Right Option synthesizes `LCONTROL` `sc=0x21D` | Swallow `0x21D` when RAlt is remapped | project |
+| 2026-10-25 | M11 | GitHub Copilot without permanent instructions could violate hook budgets and Sole Committer rule | Author `.github/copilot-instructions.md` and `agent_task.yml` | [KIT ✓] |
+| 2026-10-25 | distribution | Download & install options were built but absent from homepage/README | Document all distribution channels (WinGet, Scoop, Wizard, Portable) prominently in README | [KIT ✓] |
+| 2026-10-25 | PowerShell | External CLI stdout capture (`gh`, `git`) on Windows corrupted non-ASCII characters | Set `[Console]::OutputEncoding = UTF8` and force UTF-8 without BOM | [KIT ✓] |

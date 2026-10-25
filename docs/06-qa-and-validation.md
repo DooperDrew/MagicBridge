@@ -8,10 +8,10 @@ This document defines the quality assurance framework, empirical hardware verifi
 
 ```mermaid
 flowchart TD
-    subgraph L1["Level 1: Automated Unit & Invariant Testing"]
+    subgraph L1["Level 1: Automated Unit & Invariant Testing (134 tests)"]
         U1["magicbridge-core: Pure logic, schema roundtrip, lookup tables (32 tests)"]
         U2["magicbridge-agent: IPC, autostart, battery parsing, key injection (72 tests)"]
-        U3["magicbridge-settings: i18n, key model, profiles, localization (15 tests)"]
+        U3["magicbridge-settings: i18n, key model, wizard, QA matrix, responsive UI (30 tests)"]
     end
 
     subgraph L2["Level 2: Automated Hardening & Soak Gates"]
@@ -45,9 +45,10 @@ flowchart TD
 Every code change must pass the automated quality gate locally before being considered for release:
 ```powershell
 # Automated Test Execution
+$env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User') + ";$env:USERPROFILE\.cargo\bin"
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
+cargo test --workspace -- --test-threads=1
 cargo build --workspace --release
 ```
 

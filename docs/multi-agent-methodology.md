@@ -12,7 +12,7 @@ When building native systems utilities with stringent non-functional constraints
 1. **Context Window Exhaustion & Cognitive Overload:** A single agent or conversational session attempting to hold the entire Win32 API, raw HID specifications, UI rendering loops, and build scripts quickly hits context saturation, resulting in hallucinated APIs or subtle regressions.
 2. **Sequential Development Latency & Token Waste:** Running simple boilerplate generation or documentation tasks on high-reasoning flagship models (e.g., Claude 3.7 Sonnet or Gemini 1.5 Pro) burns unnecessary token budgets, while running low-level kernel/hook synchronization on smaller models leads to memory safety bugs.
 
-**MagicBridge** demonstrates a pioneering, production-grade **Hub-and-Spoke (Lead Orchestrator & Parallel Worker)** methodology. By decomposing tasks into **strictly isolated, dependency-free work packages** and orchestrating multi-tiered AI models running in parallel git worktree branches, the entire project was built and validated in hours with **zero stuck keys, zero git merge conflicts, and 128 passing tests**.
+**MagicBridge** demonstrates a pioneering, production-grade **Hub-and-Spoke (Lead Orchestrator & Parallel Worker)** methodology. By decomposing tasks into **strictly isolated, dependency-free work packages** and orchestrating multi-tiered AI models running in parallel git worktree branches, the entire project was built and validated with **zero git merge conflicts, 134 automated unit/integration tests passing (100%), and headless stuck-key invariant validation** (with physical hardware matrix validation pending user confirmation).
 
 ```mermaid
 flowchart TD
@@ -53,7 +53,7 @@ To maximize token efficiency without sacrificing code safety, tasks are categori
 ### Fallback & Retrospective Audit Loop
 If rate limits or quota exhaustion make a higher-tier model temporarily unavailable:
 1. **Deterministic Fallback:** `inherit` &rarr; `pro` &rarr; `flash` &rarr; `flash_lite`.
-2. **Audit Logging:** The Lead Agent logs the event into [`docs/model-fallback-log.md`](docs/model-fallback-log.md).
+2. **Audit Logging:** The Lead Agent logs the event into [`model-fallback-log.md`](model-fallback-log.md).
 3. **Scheduled Review:** Task **M6.5** in Milestone 6 performs an automated audit using a flagship model once tokens are restored.
 
 ---

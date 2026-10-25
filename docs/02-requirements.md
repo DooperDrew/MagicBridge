@@ -83,7 +83,7 @@
 
 ### Safety & compatibility
 - NFR-S1 No DLL injection, no kernel drivers, no admin rights needed for normal use.
-- NFR-S2 Mappings are active while an Apple keyboard (`VID 0x05AC`) is connected and automatically pause when none is connected
+- NFR-S2 Mappings are active while an Apple keyboard (USB: `VID 0x05AC`, Bluetooth: `VID 0x004C`) is connected and automatically pause when none is connected
   (see [03-architecture.md](03-architecture.md) §Device filtering and [hardware-findings.md](hardware-findings.md) §6).
 - NFR-S3 If the agent crashes or is killed, the keyboard falls back to normal Windows behaviour.
   No stuck keys, no leftover system changes.

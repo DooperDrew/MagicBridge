@@ -1,11 +1,11 @@
 # 01 — Vision
 
-> Status: **DRAFT** — under definition, not yet approved.
-> Working name: **MagicBridge** (placeholder, can be renamed).
+> Status: **APPROVED / ACTIVE ARCHITECTURE (v0.2.0)**  
+> Application: **MagicBridge** (`https://github.com/DooperDrew/magicbridge`)
 
 ## Problem
 
-The Apple Magic Keyboard with Numeric Keypad (**model A1843**) works on Windows 10 only as a
+The Apple Magic Keyboard with Numeric Keypad (**model A1843**) works on Windows 10 and Windows 11 only as a
 generic keyboard. Several keys and behaviours are missing or wrong:
 
 - The **Fn** key does nothing, so Fn combinations (Fn+arrows, Fn+Backspace, …) are unavailable.
@@ -26,7 +26,7 @@ Windows keyboard, with a small settings GUI that has a visual keyboard map.
 
 ## Target user
 
-The project owner: a single user on Windows 10 64-bit who games and works on the same PC and
+The project owner: a user on Windows 10 or 11 (64-bit x64) who games and works on the same PC and
 connects the keyboard over **both Bluetooth and USB (Lightning cable)**.
 
 ## Guiding principles (in priority order)
@@ -41,5 +41,5 @@ connects the keyboard over **both Bluetooth and USB (Lightning cable)**.
 - Supporting other Apple keyboards or trackpads. The architecture shouldn't rule them out, though.
 - macOS-style features beyond the keyboard: gestures, Touch Bar, etc.
 - Kernel-mode drivers or filter drivers.
-- Windows 7/8 or 32-bit support. Windows 11 is a nice-to-have, not a requirement.
+- Windows 7/8 or 32-bit support.
 - Cloud sync, accounts, telemetry. **No network access at all.**

@@ -66,7 +66,7 @@ needs a `// SAFETY:` comment. `magicbridge-core` also uses `#![forbid(unsafe_cod
 
 ### Device filtering — resolved in [hardware-findings.md](hardware-findings.md)
 - In Milestone 0 (`target\usb-dump.log`), `WM_INPUT` (`RAWKB`, which carries `hDevice`) always arrived **0.43–1.76 ms after** `WH_KEYBOARD_LL` (`HOOK`), because Windows runs low-level hooks synchronously before queueing `WM_INPUT`. Per-keystroke device filtering inside `WH_KEYBOARD_LL` is therefore not possible without blocking the input thread.
-- **Selected approach:** Mappings apply globally while an Apple keyboard (`VID 0x05AC`) is connected (tracked via event-driven device arrival/removal notifications) and turn off automatically when none is connected.
+- **Selected approach:** Mappings apply globally while an Apple keyboard (USB: `VID 0x05AC`, Bluetooth: `VID 0x004C`) is connected (tracked via event-driven device arrival/removal notifications) and turn off automatically when none is connected.
 - A kernel filter driver (e.g. Interception) is **explicitly rejected**: it needs admin rights, is risky, and can be flagged by anti-cheat software.
 
 ### Config & IPC

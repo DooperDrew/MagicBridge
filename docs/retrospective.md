@@ -64,11 +64,11 @@
 - Hardware QA: **0 / 12** rows passed (all Pending). Budget tests: latency, soak and stuck-key tests are automated and passing.
 
 ## 6. Open risks / follow-ups for this repo
-- [ ] Run the hardware QA matrix (QA-HW-01…12, QA-SYS-01…05) on a physical A1843 and record the evidence.
-- [ ] Tone down unverified claims in `multi-agent-methodology.md` / README until QA passes.
-- [ ] Remove `dist/*.zip` from git (keep them in GitHub Releases) and add `/dist` to `.gitignore`.
-- [ ] Fix the encoding corruption in `docs/model-fallback-log.md` and `CHANGELOG.md`.
-- [ ] Verify which model actually runs per tier, and log any mismatches in the fallback log.
+- [ ] Run the hardware QA matrix (QA-HW-01…12, QA-SYS-01…05) on a physical A1843 and record the evidence. _(Tooling ready in Settings Hardware QA tab; pending physical confirmation)_
+- [x] Tone down unverified claims in `multi-agent-methodology.md` / README until QA passes. _(Completed: claims aligned with automated invariants; hardware QA labeled pending)_
+- [x] Remove `dist/*.zip` from git (keep them in GitHub Releases) and add `/dist` to `.gitignore`. _(Completed: dist/ clean and gitignored)_
+- [x] Fix the encoding corruption in `docs/model-fallback-log.md` and `CHANGELOG.md`. _(Completed: UTF-8 encoding verified clean)_
+- [x] Verify which model actually runs per tier, and log any mismatches in the fallback log. _(Completed: logged in docs/model-fallback-log.md)_
 
 ## 7. Generic lessons (promoted to the kit)
 1. Put unknowns into an M0 spike with a probe tool. Never design around guesses.

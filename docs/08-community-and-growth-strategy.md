@@ -1,4 +1,4 @@
-﻿# 08 — Community Growth & Multi-Device Product Roadmap
+# 08 — Community Growth & Multi-Device Product Roadmap
 
 This document serves as the **strategic master plan and living roadmap** for transforming **MagicBridge** into the premier, community-driven open-source suite for Apple peripherals on Windows.
 
@@ -47,7 +47,7 @@ The easier it is to install MagicBridge, the faster adoption spreads.
 - **Status:** Manifests generated in [`packaging/winget/`](../packaging/winget/).
 - **How to Submit to Microsoft:**
   1. Fork [`microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs).
-  2. Copy `packaging/winget/manifests/d/DooperDrew/magicbridge/0.2.0/` into the upstream repo under `manifests/d/DooperDrew/magicbridge/0.2.0/`.
+  2. Copy `packaging/winget/manifests/d/DooperDrew/MagicBridge/0.2.0/` into the upstream repo under `manifests/d/DooperDrew/MagicBridge/0.2.0/`.
   3. Validate locally with Windows Package Manager CLI:
      ```powershell
      winget validate --manifest .\manifests\d\DooperDrew\MagicBridge\0.2.0\
