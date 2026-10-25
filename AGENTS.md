@@ -2,7 +2,7 @@
 
 > **CRITICAL FOR ALL AI AGENTS & CODING ASSISTANTS:**
 > You are working on **MagicBridge** (`https://github.com/DooperDrew/test-repo-antigravity`).
-> These guidelines are **strictly binding**. Every agent operating in this repository MUST comply with the workflow, architecture, performance budgets, and logging rules defined below without exception.
+> These guidelines are **strictly binding**. Every agent operating in this repository MUST comply with the workflow, architecture, performance budgets, sole committer protocol, and logging rules defined below without exception.
 
 ---
 
@@ -13,7 +13,67 @@
 
 ---
 
-## 2. Mandatory Reading Order (Before Any Implementation)
+## 2. Multi-Agent Organization & Sole Committer Protocol
+
+To enable clean parallelization across multiple tasks and optimize token consumption across different AI models, MagicBridge enforces a **Hub-and-Spoke (Lead & Worker)** hierarchy:
+
+```mermaid
+flowchart TD
+    LEAD["Lead Orchestrator Agent (This Session)<br/>• Sole Committer & Release Gatekeeper<br/>• Runs final verification gate<br/>• Updates Roadmap, Changelog & Issues"]
+    
+    subgraph WORKERS["Parallel Worker Subagents (Token-Optimized)"]
+        W1["T1-Core-M1 (flash_lite / flash)<br/>Pure logic, schemas, unit tests"]
+        W2["T2-UI-M5 (flash / pro)<br/>egui views & i18n"]
+        W3["T3-Hook-M2 (pro / inherit)<br/>WH_KEYBOARD_LL hook & Win32 IPC"]
+    end
+    
+    LEAD -->|"Spawns in isolated branch"| W1
+    LEAD -->|"Spawns in isolated branch"| W2
+    LEAD -->|"Spawns in isolated branch"| W3
+    
+    W1 -->|"Passes local tests & sends report"| LEAD
+    W2 -->|"Passes local tests & sends report"| LEAD
+    W3 -->|"Passes local tests & sends report"| LEAD
+    
+    LEAD -->|"Reviews diff & runs verification gate"| MERGE["Workspace Merge & Quality Gate"]
+    MERGE -->|"git commit & git push origin main"| GITHUB[("GitHub main")]
+```
+
+### Roles & Responsibilities:
+1. **The Lead Orchestrator Agent (Sole Committer):**
+   - The **ONLY** entity authorized to run `git commit`, `git push`, edit git remotes, modify `origin main`, or close GitHub Issues.
+   - Responsible for launching workers, assigning complexity tiers, merging worker branches, running the final quality gate, and updating project documentation.
+2. **Worker Agents (`magicbridge-worker`):**
+   - Work strictly in isolated branches (`Workspace: "branch"`).
+   - **STRICTLY PROHIBITED** from running `git commit`, `git push`, `git checkout main`, or `gh issue close`.
+   - Write code, run local verification commands, and return a structured completion report to the Lead.
+
+### Worker Naming Taxonomy
+Every subagent role follows the standard convention: `<Tier>-<Domain>-<Milestone>`
+- Examples: `T1-Core-M1` (Core config schema), `T3-Hook-M2` (Input hook engine), `T2-UI-M5` (Settings GUI).
+- Branch format: `task/<milestone-id>-<short-description>` (e.g. `task/m1.2-config-schema`).
+
+---
+
+## 3. Dynamic Model Selection & Complexity Tiers
+
+To maximize token efficiency without sacrificing code quality or safety, every task is assigned a complexity tier:
+
+| Tier | Scope & Workload | Criteria in MagicBridge | Target Model |
+|---|---|---|---|
+| **Tier 1 (T1 — Lean)** | Pure logic, schemas, serialization, unit tests, i18n, packaging scripts, docs. | • Pure Rust (`crates/core`).<br>• `#![forbid(unsafe_code)]`.<br>• Zero Win32 dependencies. | **`flash_lite`** or **`flash`** |
+| **Tier 2 (T2 — Moderate)** | UI widgets, event handling, named pipes, standard Win32 message pumps. | • `egui` views & layout widgets.<br>• Tray menu callbacks.<br>• Named pipe client/server. | **`flash`** or **`pro`** |
+| **Tier 3 (T3 — Complex / Critical)** | Low-level input hooks, atomic memory swaps, raw HID battery reporting, multi-threaded timing synchronization. | • `WH_KEYBOARD_LL` hook callback.<br>• Performance budget compliance (<0.1ms latency, zero alloc/locks).<br>• Hardware timing quirks (`sc=0x21D`). | **`pro`** or **`inherit`** (Opus / Sonnet) |
+
+### Fallback & Retrospective Audit Rule
+If a target model is unavailable (due to token limits, quota exhaustion, or rate limits):
+1. **Fallback Selection:** Fall back to the next available model in order: `inherit` &rarr; `pro` &rarr; `flash` &rarr; `flash_lite`.
+2. **Mandatory Logging:** The Lead Agent MUST immediately log the occurrence in [`docs/model-fallback-log.md`](docs/model-fallback-log.md) recording the task, target model, fallback model used, and reason.
+3. **Audit Task Scheduling:** The Lead Agent MUST schedule a retrospective verification task in `docs/05-roadmap.md` under Milestone 6 (Hardening & Performance) to review the fallback implementation with a higher-tier model when tokens/quota permit.
+
+---
+
+## 4. Mandatory Reading Order (Before Any Implementation)
 Before writing or modifying any code, the agent MUST read:
 1. `docs/01-vision.md`: Core problem, guiding principles, non-goals.
 2. `docs/02-requirements.md`: Exact requirements (e.g. F1.1, F7.7, NFR-P1…P5).
@@ -25,14 +85,12 @@ Before writing or modifying any code, the agent MUST read:
 
 ---
 
-## 3. Strict Development Workflow & Life of a Task
-
-Whenever an agent takes on a task or milestone step:
+## 5. Strict Development Workflow & Life of a Task
 
 ### A. Pre-Execution Phase
 1. **Locate the Task:** Check `docs/05-roadmap.md` for the next unchecked item or work on the specific task assigned by the user.
-2. **Restate Intent:** Clearly restate the task, target crate/files, and its acceptance criteria before making edits.
-3. **Verify Clean Workspace:** Check `git status` and pull latest changes from `origin main`.
+2. **Restate Intent:** Clearly restate the task, its complexity tier (`T1`/`T2`/`T3`), target crate/files, and acceptance criteria.
+3. **Verify Clean Workspace:** Check `git status` and ensure latest changes from `origin main`.
 
 ### B. Implementation & Performance Guards
 - **Hook Thread Rule (NFR-P3):** The `WH_KEYBOARD_LL` callback in `magicbridge-agent` MUST NEVER allocate memory (`Vec`, `String`, `Box`), perform disk/file I/O, output log prints, acquire locks, or invoke blocking syscalls. Precomputed lookup tables only.
@@ -50,7 +108,7 @@ Whenever an agent takes on a task or milestone step:
 - **No Hardcoded UI Strings:** All user-facing text belongs in translation files (`locales/en.toml`, `locales/it.toml`).
 
 ### D. Verification Gate (MUST PASS Locally)
-Before finishing any turn or committing, the agent MUST run and verify clean output:
+Before finishing any turn or committing, the Lead Agent MUST run and verify clean output:
 ```powershell
 # 1. Format verification
 cargo fmt --all -- --check
@@ -65,7 +123,7 @@ cargo test --workspace
 cargo build --workspace --release
 ```
 
-### E. Post-Execution & Documentation Synchronization
+### E. Post-Execution & Documentation Synchronization (Lead Agent Only)
 Once the task is validated:
 1. **Update Roadmap:** Tick the completed box `[x]` in `docs/05-roadmap.md` with commit/date notes.
 2. **Log to CHANGELOG.md:** Add a comprehensive entry to `CHANGELOG.md` detailing changes, architectural decisions, and hardware discoveries.
@@ -75,7 +133,7 @@ Once the task is validated:
 
 ---
 
-## 4. Hardware Realities & Known Quirks (From M0)
+## 6. Hardware Realities & Known Quirks (From M0)
 - **Vendor IDs:** The keyboard identifies with `VID = 0x05AC` on USB and **`VID = 0x004C`** over Bluetooth Classic. Always check both via `magicbridge_core::is_apple_vendor`.
 - **Physical Fn / Eject:** Stripped by Windows `kbdhid.sys` in kernel mode. MagicBridge relies on user-configurable trigger keys (default: Right Option / `VK_RMENU`).
 - **ISO / Italian AltGr Quirk:** Pressing physical Right Option on ISO Italian layouts causes Windows to synthesize an artificial `VK_LCONTROL` with `scanCode == 0x21D` ~0.8 ms earlier. The remapping hook must swallow `0x21D` whenever Right Option is remapped or used as Fn.
@@ -83,7 +141,7 @@ Once the task is validated:
 
 ---
 
-## 5. Escalation Rule
+## 7. Escalation Rule
 If physical keyboard behavior or testing contradicts existing documentation:
 **STOP immediately. Do not guess or silently hack around it.**
 Present the empirical findings to the user, formulate a probe or verification step, and update `docs/hardware-findings.md` upon user alignment.
