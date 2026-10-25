@@ -6,6 +6,18 @@ All development steps, hardware discoveries, architectural decisions, and commit
 
 ## 2026-10-25 — MagicBridge v0.2.0: UX Onboarding, Responsive Settings & Hardware QA Tooling (Release ✅)
 
+### Distribution Channels & Ecosystem Strategy
+- **Frictionless Distribution:**
+  - Generated official Microsoft WinGet package manifests in `packaging/winget/manifests/d/DooperDrew/magicbridge/0.2.0/` targeting `DooperDrew.MagicBridge`.
+  - Created Scoop community package manifest in `packaging/scoop/magicbridge.json`.
+  - Implemented automated manifest generation script `scripts/generate-manifests.ps1` and integrated into `scripts/package-release.ps1`.
+- **Community Growth & Multi-Device Roadmap:**
+  - Published comprehensive master plan `docs/08-community-and-growth-strategy.md` covering distribution, launch playbooks (Hacker News Show HN, Reddit showcases), crowdsourced hardware QA registry, and expansion into Compact Magic Keyboards (A1644), Magic Trackpad (A1535), and Magic Mouse (A1657).
+  - Added structured GitHub Issue templates for Hardware QA Verification, Bug Reports, and Feature Requests.
+- **Repository Alignment:**
+  - Renamed GitHub repository to `https://github.com/DooperDrew/magicbridge`.
+  - Formulated official release and versioning methodology in `docs/release-methodology.md`.
+
 ### M10.1 — Guided Windows Installer Wizard (Completed ✅, closes #12)
 - Implemented rich graphical Windows setup wizard (`scripts/setup-wizard.ps1`) and Explorer double-click launcher (`scripts/setup.cmd`):
   - Zero-elevation installation directly into `%LOCALAPPDATA%\Programs\MagicBridge`.
@@ -276,4 +288,4 @@ All development steps, hardware discoveries, architectural decisions, and commit
 
 ### Scope & Workflow Alignment — Profiles, Multi-Language Layouts & GitHub Tracking
 - Added requirement **F7.7** for **named profiles** and **multiple language/physical keyboard layouts** (`ISO Italian`, `ANSI US`, `ISO UK`, `ISO German`, `ISO French`, plus custom labels), switchable from the tray menu, GUI, or hotkey.
-- Made the GitHub repository (`DooperDrew/MagicBridge`) public, added `CHANGELOG.md`, and created GitHub Issues for all milestones (`M0`–`M7`).
+- Made the GitHub repository (`DooperDrew/magicbridge`) public, added `CHANGELOG.md`, and created GitHub Issues for all milestones (`M0`–`M7`).

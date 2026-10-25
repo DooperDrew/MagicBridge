@@ -226,4 +226,12 @@ Write-Host "Contents:"
 [System.IO.Compression.ZipFile]::OpenRead($ZipFilePath).Entries | ForEach-Object {
     Write-Host "  - $($_.FullName) ($([math]::Round($_.Length / 1KB, 1)) KB)" -ForegroundColor Gray
 }
+
+# 6. Auto-generate WinGet and Scoop package manifests
+$GenerateManifestsScript = Join-Path $ScriptDir "generate-manifests.ps1"
+if (Test-Path $GenerateManifestsScript) {
+    Write-Host "`n[6/6] Generating distribution manifests (WinGet & Scoop)..." -ForegroundColor Cyan
+    & powershell -ExecutionPolicy Bypass -File $GenerateManifestsScript -Version $Version -ArchivePath $ZipFilePath
+}
+
 Write-Host ""

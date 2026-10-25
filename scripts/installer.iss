@@ -3,7 +3,7 @@
 #define MyAppName "MagicBridge"
 #define MyAppVersion "0.2.0"
 #define MyAppPublisher "MagicBridge Contributors"
-#define MyAppURL "https://github.com/DooperDrew/MagicBridge"
+#define MyAppURL "https://github.com/DooperDrew/magicbridge"
 #define MyAppExeName "magicbridge-settings.exe"
 #define MyAgentExeName "magicbridge-agent.exe"
 

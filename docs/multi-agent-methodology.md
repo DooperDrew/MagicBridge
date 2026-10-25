@@ -2,7 +2,7 @@
 
 > **Audience:** AI Engineers, System Architects, Open-Source Contributors, and Autonomous Agents.  
 > **Status:** Canonical Living Document (Milestone 8).  
-> **Repository:** [`https://github.com/DooperDrew/MagicBridge`](https://github.com/DooperDrew/MagicBridge)
+> **Repository:** [`https://github.com/DooperDrew/magicbridge`](https://github.com/DooperDrew/magicbridge)
 
 ---
 

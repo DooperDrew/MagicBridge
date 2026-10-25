@@ -45,15 +45,15 @@ impl ArchitectureViewState {
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 ui.hyperlink_to(
                     "📖 Full Guide",
-                    "https://github.com/DooperDrew/MagicBridge/blob/main/docs/multi-agent-methodology.md",
+                    "https://github.com/DooperDrew/magicbridge/blob/main/docs/multi-agent-methodology.md",
                 );
                 ui.hyperlink_to(
                     "🧪 QA Matrix",
-                    "https://github.com/DooperDrew/MagicBridge/blob/main/docs/06-qa-and-validation.md",
+                    "https://github.com/DooperDrew/magicbridge/blob/main/docs/06-qa-and-validation.md",
                 );
                 ui.hyperlink_to(
                     "🚀 UX Roadmap",
-                    "https://github.com/DooperDrew/MagicBridge/blob/main/docs/07-ux-and-improvements.md",
+                    "https://github.com/DooperDrew/magicbridge/blob/main/docs/07-ux-and-improvements.md",
                 );
             });
         });
@@ -286,12 +286,12 @@ impl ArchitectureViewState {
             ui.label("For full specifications, consult:");
             ui.hyperlink_to(
                 "AGENTS.md",
-                "https://github.com/DooperDrew/MagicBridge/blob/main/AGENTS.md",
+                "https://github.com/DooperDrew/magicbridge/blob/main/AGENTS.md",
             );
             ui.label("and");
             ui.hyperlink_to(
                 "docs/multi-agent-methodology.md",
-                "https://github.com/DooperDrew/MagicBridge/blob/main/docs/multi-agent-methodology.md",
+                "https://github.com/DooperDrew/magicbridge/blob/main/docs/multi-agent-methodology.md",
             );
         });
     }
