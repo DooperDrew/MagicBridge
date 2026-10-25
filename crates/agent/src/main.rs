@@ -10,9 +10,11 @@ pub mod action_worker;
 pub mod autostart;
 pub mod battery;
 pub mod device_notify;
+pub mod game_mode;
 pub mod hook;
 pub mod injector;
 pub mod ipc;
+pub mod logger;
 pub mod single_instance;
 pub mod state;
 pub mod tray;
@@ -45,6 +47,13 @@ fn main() {
         Some(path) => Config::load_or_default(path).unwrap_or_default(),
         None => Config::default(),
     };
+
+    // Initialize diagnostic debug logger (NFR-Q2).
+    let log_path = magicbridge_core::default_config_dir()
+        .map(|d| d.join("debug.log"))
+        .ok();
+    logger::init(config.debug_logging, log_path);
+    logger::log("INFO", "main", "MagicBridge Agent starting up");
 
     // 3. Initialize daemon state and atomic mapping table (Milestone 2.1 & 2.5).
     let state = DaemonState::new(config, config_path);

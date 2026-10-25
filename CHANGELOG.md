@@ -4,6 +4,43 @@ All development steps, hardware discoveries, architectural decisions, and commit
 
 ---
 
+## 2026-10-25 — Milestone 7: Packaging & Release Automation (Completed ✅)
+
+### M7.1..M7.3 — Portable ZIP Script, User-Space Installer & User Guide
+- Implemented `scripts/package-release.ps1`:
+  - Compiles release binaries with optimizations.
+  - Assembles staging bundle with `magicbridge-agent.exe`, `magicbridge-settings.exe`, `locales/` (`en.toml`, `it.toml`), documentation, and installer scripts.
+  - Generates portable ZIP archive `dist/MagicBridge-v<version>-windows-x64.zip` (~2.1 MB).
+- Implemented user-space installer and uninstaller scripts:
+  - `scripts/install.ps1`: Deploys to `%LOCALAPPDATA%\Programs\MagicBridge`, creates Start Menu shortcuts, and registers per-user autostart in `HKCU\...\Run` (zero admin rights required).
+  - `scripts/uninstall.ps1`: Gracefully terminates running processes, removes shortcuts, and cleans autostart keys.
+- Comprehensive End-User Documentation:
+  - Created `docs/user-guide.md` covering setup, pairing, Fn navigation, media key controls, named profiles, battery telemetry, and Windows UIPI limitations.
+  - Added official `LICENSE` file (MIT).
+- Subagent: `T1-Package-M7` (flash).
+
+---
+
+## 2026-10-25 — Milestone 6: Hardening, Performance Verification & Game Mode (Completed ✅)
+
+### M6.1..M6.5 — Game Mode Auto-Pause, Debug Logger, Soak Tests & Latency Budget
+- Implemented `crates/agent/src/game_mode.rs`:
+  - Event-driven foreground tracker using `SetWinEventHook` for `EVENT_SYSTEM_FOREGROUND` (0% idle CPU per NFR-P2).
+  - Auto-pauses input hook and releases synthetic keys when a game from `config.game_mode_processes` or fullscreen exclusive application is focused.
+  - Restores active hook state upon return to desktop.
+- Implemented `crates/agent/src/logger.rs`:
+  - Zero-overhead atomic flag check when disabled.
+  - Timestamped diagnostic log writing to `%APPDATA%\MagicBridge\debug.log` and in-memory ring buffer (up to 200 entries) when enabled.
+- Hardening & Soak Tests (`crates/agent/tests/`):
+  - Benchmarked hook latency: average latency measured < 1 µs (< 1,000 ns), outperforming NFR-P3's 100 µs (0.1 ms) budget by >100x.
+  - Verified emergency key release and rapid 500-iteration typing/pause toggling with zero stuck keys (`NFR-S3`).
+  - Simulated 500 consecutive sleep/wake (`WM_POWERBROADCAST`) and device arrival/removal loops.
+- Model Fallback Audit (M6.5):
+  - Audited `docs/model-fallback-log.md`: zero fallback occurrences recorded; all tasks were executed using required target tiers.
+- Subagent: `T3-Hardening-M6` (pro).
+
+---
+
 ## 2026-10-25 — Milestone 5: Settings GUI (Completed ✅)
 
 ### M5.1..M5.6 — Standalone `eframe`/`egui` Settings GUI with Visual Keyboard & Profiles

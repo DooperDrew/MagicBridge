@@ -312,6 +312,12 @@ pub struct Config {
     /// Whether debug logging to disk is enabled (NFR-Q2).
     #[serde(default)]
     pub debug_logging: bool,
+    /// Whether game mode auto-pause is enabled (F9.2).
+    #[serde(default)]
+    pub game_mode_enabled: bool,
+    /// List of executable names (e.g. ["game.exe", "steam.exe"]) that trigger game mode auto-pause (F9.2).
+    #[serde(default)]
+    pub game_mode_processes: Vec<String>,
     /// Named profiles map indexed by profile name (F7.7).
     #[serde(default)]
     pub profiles: BTreeMap<String, NamedProfile>,
@@ -348,12 +354,27 @@ impl Default for Config {
             ui_language: default_ui_language(),
             pause_hotkey: None,
             debug_logging: false,
+            game_mode_enabled: false,
+            game_mode_processes: Vec::new(),
             profiles,
         }
     }
 }
 
 impl Config {
+    /// Returns `true` if `exe_name` matches any configured game mode process (case-insensitive).
+    #[must_use]
+    pub fn is_game_process(&self, exe_name: &str) -> bool {
+        let trimmed_exe = exe_name.trim();
+        self.game_mode_processes.iter().any(|p| {
+            let p_trimmed = p.trim();
+            p_trimmed.eq_ignore_ascii_case(trimmed_exe)
+                || (p_trimmed.ends_with(".exe")
+                    && p_trimmed[..p_trimmed.len() - 4].eq_ignore_ascii_case(trimmed_exe))
+                || (trimmed_exe.ends_with(".exe")
+                    && trimmed_exe[..trimmed_exe.len() - 4].eq_ignore_ascii_case(p_trimmed))
+        })
+    }
     /// Returns a reference to the active profile, if it exists in `profiles`.
     #[must_use]
     pub fn active_profile(&self) -> Option<&NamedProfile> {
@@ -958,5 +979,46 @@ mod tests {
         assert_eq!(profile.modifier_preset, ModifierPreset::WindowsLayout);
         assert_eq!(profile.top_row_mode, TopRowMode::MediaKeysFirst);
         assert_eq!(profile.fn_key, FnKeyChoice::RightOption);
+    }
+
+    #[test]
+    fn game_mode_config_and_process_matching() {
+        let mut config = Config::default();
+        assert!(!config.game_mode_enabled);
+        assert!(config.game_mode_processes.is_empty());
+        assert!(!config.is_game_process("Cyberpunk2077.exe"));
+
+        config.game_mode_enabled = true;
+        config.game_mode_processes = vec![
+            "Cyberpunk2077.exe".to_string(),
+            "cs2".to_string(),
+            "eldenring.exe ".to_string(),
+        ];
+
+        // Exact match
+        assert!(config.is_game_process("Cyberpunk2077.exe"));
+        // Case-insensitive match
+        assert!(config.is_game_process("cyberpunk2077.exe"));
+        // Match with or without .exe extension
+        assert!(config.is_game_process("Cyberpunk2077"));
+        assert!(config.is_game_process("cs2.exe"));
+        assert!(config.is_game_process("CS2"));
+        assert!(config.is_game_process("EldenRing.exe"));
+        assert!(config.is_game_process("eldenring"));
+
+        // Non-matches
+        assert!(!config.is_game_process("notepad.exe"));
+        assert!(!config.is_game_process("chrome.exe"));
+        assert!(!config.is_game_process("explorer.exe"));
+
+        // Serialization round trip
+        let toml_str = config.to_toml_string().expect("should serialize config");
+        assert!(toml_str.contains("game_mode_enabled = true"));
+        assert!(toml_str.contains("Cyberpunk2077.exe"));
+
+        let loaded = Config::from_toml_str(&toml_str).expect("should deserialize");
+        assert!(loaded.game_mode_enabled);
+        assert_eq!(loaded.game_mode_processes.len(), 3);
+        assert!(loaded.is_game_process("cs2"));
     }
 }

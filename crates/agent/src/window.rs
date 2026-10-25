@@ -50,6 +50,7 @@ struct WindowData {
     hook: Option<HookHandle>,
     low_battery_notified: bool,
     battery_timer_minutes: u32,
+    game_mode_tracker: Option<crate::game_mode::GameModeTracker>,
 }
 
 impl WindowData {
@@ -58,6 +59,21 @@ impl WindowData {
         if let Some(profile) = self.state.config.active_profile() {
             let table = magicbridge_core::compile_profile(profile);
             crate::hook::set_active_table(table);
+        }
+    }
+
+    /// Synchronizes the foreground WinEvent hook for Game Mode auto-pause (F9.2).
+    fn sync_game_mode_tracker(&mut self, hwnd: HWND) {
+        let needs_tracker = self.state.config.game_mode_enabled
+            || !self.state.config.game_mode_processes.is_empty();
+        if needs_tracker && self.game_mode_tracker.is_none() {
+            match crate::game_mode::GameModeTracker::install(hwnd) {
+                Ok(tracker) => self.game_mode_tracker = Some(tracker),
+                Err(e) => eprintln!("Failed to install GameModeTracker: {e}"),
+            }
+        } else if !needs_tracker {
+            self.game_mode_tracker = None;
+            self.state.game_mode_active = false;
         }
     }
 
@@ -120,12 +136,14 @@ impl WindowData {
         }
     }
 
-    /// Updates the hook active state based on connection and enabled status.
+    /// Updates the hook active state based on connection, enabled status, and game mode.
     ///
     /// Per NFR-S2, remapping is active while an Apple keyboard is connected
     /// and automatically paused when none is connected.
+    /// Per F9.2, remapping is paused while a game is active in the foreground.
     fn update_hook_state(&mut self) {
-        let should_be_active = self.state.enabled && self.state.is_connected;
+        let should_be_active =
+            self.state.enabled && self.state.is_connected && !self.state.game_mode_active;
         if should_be_active {
             if self.hook.is_none() {
                 match HookHandle::install() {
@@ -139,9 +157,13 @@ impl WindowData {
             } else if let Some(ref h) = self.hook {
                 h.set_active(true);
             }
-        } else if let Some(h) = self.hook.take() {
-            // Drop unhooks and releases any active synthetic keys (NFR-S3).
-            drop(h);
+        } else if let Some(ref h) = self.hook {
+            // Deactivate hook and release any held synthetic keys (NFR-S3).
+            h.set_active(false);
+            if !self.state.is_connected {
+                let h = self.hook.take();
+                drop(h);
+            }
         }
     }
 }
@@ -194,6 +216,7 @@ impl MessageWindow {
             hook: None,
             low_battery_notified: false,
             battery_timer_minutes: 0,
+            game_mode_tracker: None,
         });
         let raw_ptr = Box::into_raw(window_data);
 
@@ -283,8 +306,10 @@ unsafe extern "system" fn wnd_proc(
             let devices = probe_connected_apple_keyboards();
             data.state.sync_connected_devices(&devices);
 
-            // 2. Synchronize active mapping table and update hook state (NFR-S2).
+            // 2. Synchronize active mapping table, game mode, and update hook state (NFR-S2, F9.2).
             data.recompile_active_table();
+            data.sync_game_mode_tracker(hwnd);
+            data.state.game_mode_active = crate::game_mode::is_foreground_game(&data.state.config);
             data.update_hook_state();
 
             // 3. Register for device interface arrival/removal notifications (F8.4, NFR-S2).
@@ -396,8 +421,27 @@ unsafe extern "system" fn wnd_proc(
             }
             LRESULT(0)
         }
+        crate::game_mode::WM_GAME_MODE_EVENT => {
+            let is_game = crate::game_mode::is_foreground_game(&data.state.config);
+            if is_game != data.state.game_mode_active {
+                data.state.game_mode_active = is_game;
+                crate::logger::log(
+                    "INFO",
+                    "game_mode",
+                    &format!("Foreground game status changed: active={is_game}"),
+                );
+                data.update_hook_state();
+                if let Some(ref tray) = data.tray {
+                    tray.update_tooltip(&data.state);
+                }
+            }
+            LRESULT(0)
+        }
         crate::ipc::WM_IPC_STATE_UPDATED => {
             data.recompile_active_table();
+            crate::logger::set_enabled(data.state.config.debug_logging);
+            data.sync_game_mode_tracker(hwnd);
+            data.state.game_mode_active = crate::game_mode::is_foreground_game(&data.state.config);
             data.update_hook_state();
             if data.state.config.battery_poll_minutes != data.battery_timer_minutes {
                 data.setup_battery_timer(hwnd);

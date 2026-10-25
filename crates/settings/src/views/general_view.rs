@@ -20,6 +20,18 @@ pub struct GeneralViewState {
     pub status_message: Option<String>,
 }
 
+impl GeneralViewState {
+    /// Creates a new view state initialized from the current configuration.
+    #[must_use]
+    pub fn new_from_config(config: &Config) -> Self {
+        Self {
+            pause_hotkey_text: config.pause_hotkey.clone().unwrap_or_default(),
+            game_processes_text: config.game_mode_processes.join(", "),
+            status_message: None,
+        }
+    }
+}
+
 /// Renders the General settings view.
 pub fn show(
     ui: &mut Ui,
@@ -96,9 +108,27 @@ pub fn show(
         ui.separator();
 
         // 4. Game Mode & Monitored Executables (F9.2)
+        if ui
+            .checkbox(&mut config.game_mode_enabled, i18n.t("general.game_mode"))
+            .changed()
+        {
+            modified = true;
+        }
+
         ui.horizontal(|ui| {
             ui.label(i18n.t("general.game_processes"));
-            ui.text_edit_singleline(&mut state.game_processes_text);
+            if ui
+                .text_edit_singleline(&mut state.game_processes_text)
+                .changed()
+            {
+                config.game_mode_processes = state
+                    .game_processes_text
+                    .split(',')
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect();
+                modified = true;
+            }
         });
         ui.indent("game_desc", |ui| {
             ui.label(i18n.t("general.game_mode_desc"));

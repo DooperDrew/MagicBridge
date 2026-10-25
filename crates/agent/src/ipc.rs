@@ -151,6 +151,9 @@ pub struct DaemonStatus {
     pub enabled: bool,
     /// Whether remapping is paused.
     pub paused: bool,
+    /// Whether game mode auto-pause is currently active (F9.2).
+    #[serde(default)]
+    pub game_mode_active: bool,
 }
 
 /// Request commands sent by clients (GUI, CLI, tests) over the named pipe.
@@ -967,6 +970,7 @@ mod tests {
             top_row_mode: TopRowMode::MediaKeysFirst,
             enabled: true,
             paused: false,
+            game_mode_active: false,
         };
 
         let response = IpcResponse::ok(status.clone(), Some("Operation OK".to_string()));

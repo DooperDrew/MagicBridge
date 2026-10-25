@@ -13,6 +13,7 @@
 [Problem](#the-problem) •
 [Features](#key-features) •
 [Architecture](#architecture-overview) •
+[User Guide](docs/user-guide.md) •
 [Building & Running](#building--running) •
 [Roadmap](#roadmap--milestones) •
 [Contributing](#contributing)
@@ -141,6 +142,9 @@ cargo run -p magicbridge-agent
 
 # Run the settings GUI
 cargo run -p magicbridge-settings
+
+# Package portable release archive (.zip)
+.\scripts\package-release.ps1
 ```
 
 Compiled binaries will be located in `target/release/` (`magicbridge-agent.exe` and `magicbridge-settings.exe`).

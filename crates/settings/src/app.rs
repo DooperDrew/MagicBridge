@@ -52,6 +52,7 @@ impl MagicBridgeApp {
         let i18n = I18n::new(&config.ui_language);
         let ipc = SettingsIpc::new();
         let daemon_status = ipc.query_status();
+        let general_state = GeneralViewState::new_from_config(&config);
 
         Self {
             current_tab: SettingsTab::Keyboard,
@@ -64,7 +65,7 @@ impl MagicBridgeApp {
             banner_message: None,
             keyboard_state: KeyboardViewState::default(),
             top_row_state: TopRowViewState::default(),
-            general_state: GeneralViewState::default(),
+            general_state,
         }
     }
 

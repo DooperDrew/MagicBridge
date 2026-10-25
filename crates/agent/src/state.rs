@@ -22,6 +22,8 @@ pub struct DaemonState {
     pub transport_name: Option<String>,
     /// Tracked paths of currently connected Apple keyboard HID collections.
     pub connected_devices: HashSet<String>,
+    /// Whether game mode auto-pause is currently active (F9.2).
+    pub game_mode_active: bool,
 }
 
 impl DaemonState {
@@ -35,6 +37,7 @@ impl DaemonState {
             is_connected: false,
             transport_name: None,
             connected_devices: HashSet::new(),
+            game_mode_active: false,
         }
     }
 
@@ -130,10 +133,12 @@ impl DaemonState {
     /// Formats the tray tooltip string according to docs/04-ux.md.
     pub fn format_tooltip(&self) -> String {
         let mut parts = Vec::with_capacity(5);
-        if self.enabled {
-            parts.push("MagicBridge".to_string());
-        } else {
+        if !self.enabled {
             parts.push("MagicBridge (Paused)".to_string());
+        } else if self.game_mode_active {
+            parts.push("MagicBridge (Game Mode Paused)".to_string());
+        } else {
+            parts.push("MagicBridge".to_string());
         }
 
         if self.is_connected {
@@ -185,7 +190,8 @@ impl DaemonState {
             active_profile: self.active_profile_name().to_string(),
             top_row_mode: self.active_top_row_mode(),
             enabled: self.enabled,
-            paused: !self.enabled,
+            paused: !self.enabled || self.game_mode_active,
+            game_mode_active: self.game_mode_active,
         }
     }
 
@@ -369,5 +375,27 @@ mod tests {
         assert_eq!(status.top_row_mode, TopRowMode::MediaKeysFirst);
         assert!(status.enabled);
         assert!(!status.paused);
+        assert!(!status.game_mode_active);
+    }
+
+    #[test]
+    fn daemon_state_game_mode_tooltip_and_status() {
+        let config = Config::default();
+        let mut state = DaemonState::new(config, None);
+        state.is_connected = true;
+
+        assert!(!state.game_mode_active);
+        assert!(state.format_tooltip().starts_with("MagicBridge —"));
+
+        state.game_mode_active = true;
+        assert!(
+            state
+                .format_tooltip()
+                .starts_with("MagicBridge (Game Mode Paused) —")
+        );
+
+        let status = state.status();
+        assert!(status.game_mode_active);
+        assert!(status.paused);
     }
 }
