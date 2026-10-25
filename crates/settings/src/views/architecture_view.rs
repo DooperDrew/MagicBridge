@@ -44,8 +44,16 @@ impl ArchitectureViewState {
             ui.heading("🤖 Multi-Agent Architecture & Methodology");
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 ui.hyperlink_to(
-                    "📖 Full Guide on GitHub",
+                    "📖 Full Guide",
                     "https://github.com/DooperDrew/test-repo-antigravity/blob/main/docs/multi-agent-methodology.md",
+                );
+                ui.hyperlink_to(
+                    "🧪 QA Matrix",
+                    "https://github.com/DooperDrew/test-repo-antigravity/blob/main/docs/06-qa-and-validation.md",
+                );
+                ui.hyperlink_to(
+                    "🚀 UX Roadmap",
+                    "https://github.com/DooperDrew/test-repo-antigravity/blob/main/docs/07-ux-and-improvements.md",
                 );
             });
         });

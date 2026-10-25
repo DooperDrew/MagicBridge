@@ -4,6 +4,25 @@ All development steps, hardware discoveries, architectural decisions, and commit
 
 ---
 
+## 2026-10-25 — QA Framework, UX Specifications & GitHub Issue Tracking
+
+### QA Test Suite & UX Backlog Formalization
+- **Dedicated QA Specification (`docs/06-qa-and-validation.md`):**
+  - Level 1-4 validation architecture spanning automated unit invariants, soak/hardening gates, empirical hardware tests, and security edge cases.
+  - Complete 12-point empirical hardware test matrix for physical Apple Magic Keyboard (Model A1843) across USB (`VID 0x05AC`) and Bluetooth Classic (`VID 0x004C`).
+  - Validation procedures for the Italian/ISO AltGr quirk (`sc=0x21D`), Modern Standby/sleep recovery, UIPI admin window isolation, and Game Mode auto-pause.
+- **Dedicated UX Roadmap (`docs/07-ux-and-improvements.md`):**
+  - Specification for Guided Windows Installer Wizard (`magicbridge-setup.exe` / Inno Setup) with zero UAC elevation requirement.
+  - Architecture for First-Run Initial Configuration Onboarding Wizard in `magicbridge-settings`: device auto-detect, layout picker, modifier preset switcher, Fn trigger key choice, and autostart toggle.
+  - Technical design for Fluid Responsive Layout in `magicbridge-settings` (`egui`): dynamic keyboard scale clamping (`ui.available_width() / 25.5`) and adaptive navigation rail for compact and high-DPI screens.
+  - Feature backlog: dynamic battery tray badge, DDC/CI monitor brightness integration, per-app profiles, and GitHub release checker.
+- **GitHub Issue Tracking & Milestone Alignment:**
+  - Created GitHub Milestones **M9 — Quality Assurance & Empirical Validation** and **M10 — UX & Onboarding Improvements**.
+  - Logged tracking issues: #10 (Hardware QA Matrix), #11 (Power States & Edge Cases), #12 (Installer Wizard), #13 (Onboarding Wizard), #14 (Responsive Settings Layout), and #15 (Battery Tray Badge).
+  - Integrated direct links to QA Matrix and UX Roadmap in the Settings Architecture Tab and `README.md`.
+
+---
+
 ## 2026-10-25 — Milestone 8: Multi-Agent Methodology & Release Parity (Completed ✅)
 
 ### M8.1..M8.3 — Didactic Multi-Agent Guide, GUI Architecture Tab & Release Parity

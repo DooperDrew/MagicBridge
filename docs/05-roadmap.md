@@ -76,3 +76,18 @@ Goal: learn exactly what the A1843 sends on Windows, over USB and Bluetooth.
 - [x] `[T2]` M8.2 Add dedicated "Architecture" tab in `magicbridge-settings` GUI with interactive didactic breakdown and GitHub links. _(2026-10-25 — M8.2 completed)_
 - [x] `[T1]` M8.3 Publish GitHub Release `v0.1.0` with bundled distribution archive (`dist/MagicBridge-v0.1.0-windows-x64.zip`) verifying 100% parity between local repository and GitHub. _(2026-10-25 — M8.3 completed)_
 **Exit:** Comprehensive multi-agent methodology guide, interactive GUI architecture tab, and GitHub Release v0.1.0 published with binary asset. — **MILESTONE 8 COMPLETE ✅**
+
+## M9 — Quality Assurance & Empirical Validation
+Goal: Systematically validate MagicBridge against physical A1843 hardware, edge-case power states, and security boundaries. Documented in `docs/06-qa-and-validation.md`.
+- [ ] `[T2]` M9.1 Physical A1843 hardware matrix execution: USB (`0x05AC`) and Bluetooth (`0x004C`), ISO Italian AltGr quirk suppression, Fn layer combos, and top-row toggling.
+- [ ] `[T3]` M9.2 Edge-case power & security validation: Modern standby/sleep resume, emergency disconnect key release, UIPI elevated window behavior, and Game Mode auto-pause.
+- [ ] `[T1]` M9.3 Automated diagnostic & QA probe reporting: Export empirical test logs directly to GitHub issues and `docs/06-qa-and-validation.md`.
+**Exit:** 100% pass rate across physical A1843 hardware matrix and zero lingering keys or crashes in edge cases.
+
+## M10 — User Experience & Onboarding Improvements
+Goal: Elevate the out-of-the-box user experience with guided installation, interactive first-run onboarding, and responsive GUI layouts. Documented in `docs/07-ux-and-improvements.md`.
+- [ ] `[T1]` M10.1 Guided Windows Installation Wizard (`magicbridge-setup.exe` / Inno Setup script): zero-elevation install into `%LOCALAPPDATA%`, start menu, and desktop shortcuts.
+- [ ] `[T2]` M10.2 First-Run Onboarding Wizard in `magicbridge-settings`: welcome, hardware auto-detect, layout & modifier preset picker, Fn trigger selection, and autostart toggle.
+- [ ] `[T2]` M10.3 Responsive UI layout in `magicbridge-settings`: dynamic visual A1843 keyboard scaling (`key_size` clamp) and adaptive sidebar/compact drawer navigation for compact and high-DPI screens.
+- [ ] `[T2]` M10.4 Dynamic Tray Battery Badge & Status: render live battery percentage and charging indicator directly on the system tray icon.
+**Exit:** Seamless guided installation, first-run wizard, fluid responsive Settings GUI, and live battery tray indicator.

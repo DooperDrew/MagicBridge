@@ -157,13 +157,16 @@ Compiled binaries will be located in `target/release/` (`magicbridge-agent.exe` 
 Progress is tracked via GitHub Milestones and Issues:
 
 - [x] **[M0: Hardware Spike 🔬](https://github.com/DooperDrew/test-repo-antigravity/issues/1)** — Verified USB/BT descriptors, battery report `0x90`, timing benchmarks, and the `AltGr` scancode `0x21D` quirk. See [docs/hardware-findings.md](docs/hardware-findings.md).
-- [ ] **[M1: Agent Skeleton](https://github.com/DooperDrew/test-repo-antigravity/issues/2)** — Single-instance tray app, config schema, autostart, and device lifecycle handling.
-- [ ] **[M2: Remapping Engine](https://github.com/DooperDrew/test-repo-antigravity/issues/3)** — Zero-allocation `WH_KEYBOARD_LL` hook, atomic table swapping, modifier presets, and self-injection prevention.
-- [ ] **[M3: Fn Layer & Top Row](https://github.com/DooperDrew/test-repo-antigravity/issues/4)** — Configurable Fn trigger key, Fn combos, and Media vs. F-keys toggle.
-- [ ] **[M4: Custom Actions & Battery](https://github.com/DooperDrew/test-repo-antigravity/issues/5)** — Off-thread macro execution and background battery monitoring.
-- [ ] **[M5: Settings GUI](https://github.com/DooperDrew/test-repo-antigravity/issues/8)** — Visual A1843 layout editor, multi-language presets, and profile manager.
-- [ ] **[M6: Hardening & Performance](https://github.com/DooperDrew/test-repo-antigravity/issues/6)** — Soak testing, sleep/resume validation, and strict latency measurement.
-- [ ] **[M7: Packaging & Release](https://github.com/DooperDrew/test-repo-antigravity/issues/7)** — Standalone portable zip and installer.
+- [x] **[M1: Agent Skeleton](https://github.com/DooperDrew/test-repo-antigravity/issues/2)** — Single-instance tray app, config schema, autostart, and device lifecycle handling.
+- [x] **[M2: Remapping Engine](https://github.com/DooperDrew/test-repo-antigravity/issues/3)** — Zero-allocation `WH_KEYBOARD_LL` hook, atomic table swapping, modifier presets, and self-injection prevention.
+- [x] **[M3: Fn Layer & Top Row](https://github.com/DooperDrew/test-repo-antigravity/issues/4)** — Configurable Fn trigger key, Fn combos, and Media vs. F-keys toggle.
+- [x] **[M4: Custom Actions & Battery](https://github.com/DooperDrew/test-repo-antigravity/issues/5)** — Off-thread macro execution and background battery monitoring.
+- [x] **[M5: Settings GUI](https://github.com/DooperDrew/test-repo-antigravity/issues/8)** — Visual A1843 layout editor, multi-language presets, and profile manager.
+- [x] **[M6: Hardening & Performance](https://github.com/DooperDrew/test-repo-antigravity/issues/6)** — Soak testing, sleep/resume validation, and strict latency measurement.
+- [x] **[M7: Packaging & Release](https://github.com/DooperDrew/test-repo-antigravity/issues/7)** — Standalone portable zip and installer.
+- [x] **[M8: Multi-Agent Methodology & Architecture](https://github.com/DooperDrew/test-repo-antigravity/issues/9)** — Didactic multi-agent parallelization documentation, Settings architecture tab, and GitHub Release v0.1.0 parity. See [docs/multi-agent-methodology.md](docs/multi-agent-methodology.md).
+- [ ] **M9: Quality Assurance & Empirical Validation** — Physical A1843 hardware matrix execution, sleep/resume, game mode auto-pause, and security verification. See [docs/06-qa-and-validation.md](docs/06-qa-and-validation.md).
+- [ ] **M10: User Experience & Onboarding Improvements** — Guided installer wizard, first-run onboarding configuration wizard, responsive Settings layout, and live battery tray indicator. See [docs/07-ux-and-improvements.md](docs/07-ux-and-improvements.md).
 
 ---
 
