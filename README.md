@@ -164,12 +164,15 @@ Progress is tracked via GitHub Milestones and Issues:
 - [x] **[M8: Multi-Agent Methodology & Architecture](https://github.com/DooperDrew/magicbridge/issues/9)** — Didactic multi-agent parallelization documentation, Settings architecture tab, and GitHub Release v0.1.0 parity. See [docs/multi-agent-methodology.md](docs/multi-agent-methodology.md).
 - [ ] **M9: Quality Assurance & Empirical Validation** — Physical A1843 hardware matrix execution, sleep/resume, game mode auto-pause, and security verification. See [docs/06-qa-and-validation.md](docs/06-qa-and-validation.md).
 - [ ] **M10: User Experience & Onboarding Improvements** — Guided installer wizard, first-run onboarding configuration wizard, responsive Settings layout, and live battery tray indicator. See [docs/07-ux-and-improvements.md](docs/07-ux-and-improvements.md).
+- [x] **[M11: GitHub Copilot Agent Integration](https://github.com/DooperDrew/magicbridge/issues/16)** — Cloud multi-agent collaborative workflows, permanent repo instructions (`.github/copilot-instructions.md`), and automated agent task issue templates. See [docs/multi-agent-methodology.md](docs/multi-agent-methodology.md).
 
 ---
 
-## Contributing
+## Contributing & AI Agent Development
 
 We welcome community feedback, bug reports, and pull requests! Please check out [CONTRIBUTING.md](CONTRIBUTING.md) for code conventions, safety requirements, and testing guidelines.
+
+MagicBridge is built using an **AI-Agent native architecture**. GitHub Copilot and autonomous coding agents follow strict performance and safety guardrails documented in [`.github/copilot-instructions.md`](.github/copilot-instructions.md). New features and bounded tasks can be directly prepared for agents using the [🤖 Agent Task Issue Template](.github/ISSUE_TEMPLATE/agent_task.md).
 
 ## License
 

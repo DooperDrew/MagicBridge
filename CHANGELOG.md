@@ -1,6 +1,30 @@
-﻿# Development & Knowledge Log (`CHANGELOG.md`)
+# Development & Knowledge Log (`CHANGELOG.md`)
 
 All development steps, hardware discoveries, architectural decisions, and commits are logged here in chronological order for future reference.
+
+---
+
+## 2026-10-25 — Milestone 11: GitHub Copilot Agent Integration & Cloud Multi-Agent Workflow (Completed ✅, closes #16)
+
+### Objective & Architecture
+- Integrated GitHub Copilot (Agent & IDE) into the MagicBridge multi-agent ecosystem using a strictly defined division of labor:
+  - **Lead Orchestrator (Antigravity):** High-level architect, task planner, verification gatekeeper, and **Sole Committer** to `origin main`.
+  - **GitHub Copilot Agent:** Fast draft implementer working in the cloud on isolated feature branches (`task/<issue-id>-<description>`) delivering changes exclusively via **Draft Pull Requests**.
+
+### Key Deliverables & Changes
+1. **Hardened Permanent Copilot Instructions (`.github/copilot-instructions.md`):**
+   - Codified non-negotiable performance budgets: `WH_KEYBOARD_LL` input hook callback must NEVER allocate heap memory, perform disk/file I/O, output log prints, or acquire locks (<0.1ms latency).
+   - Enforced pure Rust in `crates/core` with `#![forbid(unsafe_code)]` and zero Win32 dependencies.
+   - Enforced Sole Committer protocol: Copilot is strictly prohibited from pushing directly to `main` or closing issues.
+   - Codified Apple A1843 hardware ground truth (VID `0x05AC`/`0x004C`, kernel Fn stripping, Italian AltGr `0x21D` scancode quirk, battery report ID `0x90`).
+   - Documented toolchain PATH resiliency preamble (`$env:Path = ...`) and test concurrency isolation (`-- --test-threads=1`).
+   - Enforced the "Claims follow evidence" principle.
+2. **Automated Agent Task Issue Templates:**
+   - Authored `.github/ISSUE_TEMPLATE/agent_task.md` (markdown template) and `.github/ISSUE_TEMPLATE/agent_task.yml` (interactive GitHub form) allowing the user or Lead Agent to quickly prepare bounded, context-rich implementation tasks for AI coding agents with explicit file ownership, invariants, and acceptance criteria.
+3. **Multi-Agent Methodology Extension (`docs/multi-agent-methodology.md`):**
+   - Added Section 7 detailing the hybrid local + cloud multi-agent lifecycle with Mermaid interaction diagrams and role contracts.
+4. **Governance Alignment:**
+   - Updated `AGENTS.md` and `README.md` to formally document GitHub Copilot Agent as a supported cloud worker class.
 
 ---
 

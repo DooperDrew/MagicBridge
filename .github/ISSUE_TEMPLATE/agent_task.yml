@@ -1,0 +1,87 @@
+name: "🤖 Agent Implementation Task"
+description: Standardized, bounded task specification for GitHub Copilot Agent or worker subagents
+title: "[Task]: "
+labels: ["agent-task", "enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template when preparing a bounded, self-contained implementation task for **GitHub Copilot Agent** or autonomous worker subagents. Tasks created with this template enforce the **Sole Committer Protocol** and MagicBridge performance budgets.
+  - type: input
+    id: objective
+    attributes:
+      label: 🎯 Task Objective
+      description: Concise statement of what needs to be implemented and why.
+      placeholder: e.g. Implement dynamic tray battery percentage icon rendering
+    validations:
+      required: true
+  - type: dropdown
+    id: complexity_tier
+    attributes:
+      label: 📊 Complexity Tier
+      description: Architectural workload classification for dynamic model selection.
+      options:
+        - "Tier 1 (Lean) — Pure logic, schemas, serialization, tests, i18n, docs"
+        - "Tier 2 (Moderate) — UI views, egui widgets, named pipes, Win32 message loop"
+        - "Tier 3 (Complex / Critical) — WH_KEYBOARD_LL hook, atomics, raw HID, timing quirks"
+    validations:
+      required: true
+  - type: dropdown
+    id: target_crate
+    attributes:
+      label: 📦 Target Crate Boundary
+      description: Scope work to a single crate whenever possible to prevent merge friction.
+      options:
+        - "crates/core (magicbridge-core) — Pure business logic, forbid(unsafe)"
+        - "crates/agent (magicbridge-agent) — Background daemon, hooks, Win32, HID"
+        - "crates/settings (magicbridge-settings) — egui GUI application"
+        - "crates/hid-probe (hid-probe) — Hardware probe CLI utility"
+        - "Packaging / Scripts / Documentation"
+    validations:
+      required: true
+  - type: textarea
+    id: files
+    attributes:
+      label: 📁 Target Files & Ownership
+      description: Explicit list of files the agent owns for this task.
+      placeholder: |
+        - crates/settings/src/views/battery_view.rs
+        - crates/settings/src/app.rs
+    validations:
+      required: true
+  - type: checkboxes
+    id: invariants
+    attributes:
+      label: 🛡️ Performance & Safety Invariants
+      options:
+        - label: "Hook Thread Rule (NFR-P3): Zero heap allocations, zero locks, zero file I/O, zero log prints"
+        - label: "Anti-Cheat Rule (NFR-S1): Pure user-mode Win32, no kernel drivers or DLL injection"
+        - label: "Pure Logic Rule: Pure Rust in crates/core with #![forbid(unsafe_code)]"
+        - label: "Loop Prevention: All synthetic inputs tagged with MAGICBRIDGE_EXTRA_INFO"
+        - label: "Safety Rationale: Every unsafe block accompanied by // SAFETY: comment"
+        - label: "Localization: Zero hardcoded strings; UI text defined in locales/*.toml"
+  - type: textarea
+    id: instructions
+    attributes:
+      label: 📝 Implementation Steps
+      description: Step-by-step instructions for the coding agent.
+      placeholder: |
+        1. Add new struct or method to target module
+        2. Implement state transition or UI rendering logic
+        3. Write comprehensive unit tests for all edge cases
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: ✅ Verifiable Acceptance Criteria
+      description: Checkbox list of verifiable outcomes.
+      value: |
+        - [ ] Unit tests added covering new behavior
+        - [ ] `$env:Path = ...; cargo fmt --all -- --check` passes cleanly
+        - [ ] `cargo clippy --workspace --all-targets -- -D warnings` produces zero warnings
+        - [ ] `cargo test --workspace -- --test-threads=1` passes 100%
+        - [ ] `cargo build --workspace --release` succeeds
+        - [ ] Delivered as a Draft PR on a feature branch (Sole Committer Protocol)
+    validations:
+      required: true

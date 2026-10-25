@@ -47,6 +47,10 @@ flowchart TD
    - Work strictly in isolated branches (`Workspace: "branch"`).
    - **STRICTLY PROHIBITED** from running `git commit`, `git push`, `git checkout main`, or `gh issue close`.
    - Write code, run local verification commands, and return a structured completion report to the Lead.
+3. **GitHub Copilot Agent (Cloud Worker):**
+   - Operates in GitHub Cloud or IDE on isolated feature branches (`task/<issue-id>-<description>`).
+   - Bound by `.github/copilot-instructions.md` and tasks structured with `.github/ISSUE_TEMPLATE/agent_task.md`.
+   - **STRICTLY PROHIBITED** from committing directly to `main` or closing issues; delivers work exclusively via **Draft Pull Requests** for Lead Agent verification and merge.
 
 ### Worker Naming Taxonomy
 Every subagent role follows the standard convention: `<Tier>-<Domain>-<Milestone>`

@@ -1,4 +1,4 @@
-﻿# Multi-Agent Parallel Architecture & Methodology Guide
+# Multi-Agent Parallel Architecture & Methodology Guide
 
 > **Audience:** AI Engineers, System Architects, Open-Source Contributors, and Autonomous Agents.  
 > **Status:** Canonical Living Document (Milestone 8).  
@@ -267,9 +267,46 @@ Use `invoke_subagent` specifying the appropriate tier model:
 ### Step 3: Run the Verification Gate & Commit
 Once worker completion reports are received:
 ```powershell
+$env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User') + ";$env:USERPROFILE\.cargo\bin"
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
+cargo test --workspace -- --test-threads=1
 cargo build --workspace --release
 ```
 Only the Lead Agent stages, commits, tags, and pushes to `origin main`.
+
+---
+
+## 7. Cloud Multi-Agent Collaboration: GitHub Copilot Agent Integration
+
+While Antigravity subagents provide ultra-low-latency local branch parallelization, MagicBridge also supports cloud-native asynchronous execution via **GitHub Copilot Agent** using a strict division of labor:
+
+```mermaid
+flowchart TD
+    USER["User / Product Owner"] -->|"High-Level Intent"| LEAD["Lead Orchestrator (Antigravity)<br/>• Deep architectural understanding<br/>• Decomposes features into bounded GitHub Issues<br/>• Verification & Quality Gatekeeper"]
+    
+    LEAD -->|"Creates Issue via agent_task.md"| ISSUE[("GitHub Issue #N<br/>• Complexity Tier & Boundaries<br/>• Owned files & Invariants<br/>• Step-by-step instructions")]
+    
+    ISSUE -->|"Assigned to / Triggered by"| COPILOT["GitHub Copilot Agent (Cloud / IDE)<br/>• Consumes issue & repo rules<br/>• Generates draft code & unit tests<br/>• Adheres to .github/copilot-instructions.md"]
+    
+    COPILOT -->|"Submits Draft PR<br/>(Sole Committer Protocol)"| DRAFT_PR["Draft Pull Request<br/>task/<issue-id>-<description>"]
+    
+    DRAFT_PR -->|"Pulls branch locally & audits"| LEAD_GATE{"Lead Verification Gate<br/>1. Check hook zero-alloc budget<br/>2. Verify unsafe // SAFETY: comments<br/>3. cargo fmt, clippy, test, build"}
+    
+    LEAD_GATE -->|"Pass"| MERGE["Lead merges & pushes to main<br/>Closes Issue & Updates Docs"]
+    LEAD_GATE -->|"Edge-case fixes needed"| REFINE["Lead refines code locally<br/>or posts PR review comment"]
+    REFINE --> MERGE
+    MERGE --> GITHUB_MAIN[("GitHub main & Releases")]
+```
+
+### Division of Roles:
+| Role | **Lead Agent (Antigravity)** | **GitHub Copilot (Agent & IDE)** |
+|---|---|---|
+| **Primary Job** | **Architect & Quality Gatekeeper** | **Fast Draft Implementer** |
+| **Responsibilities** | • Maintains architectural integrity & docs.<br>• Breaks features into modular GitHub Issues.<br>• Runs final verification gate.<br>• Sole committer to `origin main`. | • Consumes the issue & drafts code in the cloud.<br>• Generates boilerplate & unit tests.<br>• Speeds up inline edits & commit messages in IDE. |
+| **Interaction** | User interacts with Lead when planning or reviewing finished milestones. | Runs autonomously in the background on GitHub. |
+
+### Configuration Guardrails:
+1. **`.github/copilot-instructions.md`:** Permanent repository memory for Copilot. Enforces hook thread zero-allocation rules (`NFR-P3`), pure logic `#![forbid(unsafe_code)]`, and the Sole Committer Protocol.
+2. **`.github/ISSUE_TEMPLATE/agent_task.md` / `agent_task.yml`:** Standardized task schema providing context, file ownership boundaries, and verifiable acceptance criteria.
+3. **Draft PR Pattern:** Copilot never touches `main` directly. All changes arrive as Draft PRs for local lead auditing and verification before merge.

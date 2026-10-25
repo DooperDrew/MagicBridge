@@ -96,3 +96,11 @@ Goal: Elevate the out-of-the-box user experience with guided installation, inter
 - [x] `[T2]` M10.3 Responsive UI layout in `magicbridge-settings`: dynamic visual A1843 keyboard scaling (`key_size` clamp) and adaptive sidebar/compact drawer navigation for compact and high-DPI screens. _(2026-10-25 — M10.3 completed, closes #14)_
 - [ ] `[T2]` M10.4 Dynamic Tray Battery Badge & Status: render live battery percentage and charging indicator directly on the system tray icon.
 **Exit:** Seamless guided installation, first-run wizard, fluid responsive Settings GUI, and live battery tray indicator.
+
+## M11 — GitHub Copilot Agent Integration & Cloud Multi-Agent Workflow
+Goal: Establish seamless collaborative development between the local Lead Orchestrator Agent (Antigravity) and GitHub Copilot (Agent & IDE), enforcing the Sole Committer Protocol, repository safety budgets, and autonomous task handoffs. Documented in `docs/multi-agent-methodology.md`.
+- [x] `[T1]` M11.1 Author hardened `.github/copilot-instructions.md` with strict architectural constraints (`WH_KEYBOARD_LL` zero-allocation, `#![forbid(unsafe_code)]`, Sole Committer Protocol, PATH resiliency, claims follow evidence). _(2026-10-25 — M11.1 completed)_
+- [x] `[T1]` M11.2 Standardized agent task issue templates: author `.github/ISSUE_TEMPLATE/agent_task.md` and `agent_task.yml` for bounded, context-rich task delegation. _(2026-10-25 — M11.2 completed)_
+- [x] `[T1]` M11.3 Extend `docs/multi-agent-methodology.md` with hybrid local+cloud multi-agent lifecycle (Draft PR &rarr; Lead Verification Gate &rarr; Sole Committer Merge). _(2026-10-25 — M11.3 completed)_
+- [x] `[T1]` M11.4 Update `AGENTS.md` and `README.md` to formally document GitHub Copilot Agent as a supported cloud worker class. _(2026-10-25 — M11.4 completed, closes #16)_
+**Exit:** Zero-friction cloud multi-agent workflow where Copilot drafts PRs under strict safety guardrails and the Lead Agent verifies and merges. — **MILESTONE 11 COMPLETE ✅**
