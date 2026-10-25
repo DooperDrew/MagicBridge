@@ -49,12 +49,13 @@ Goal: learn exactly what the A1843 sends on Windows, over USB and Bluetooth.
 **Exit:** direct HID battery reading over USB & BT, low-battery alert, async action dispatcher. — **MILESTONE 4 COMPLETE ✅**
 
 ## M5 — Settings GUI
-- [ ] `[T2]` M5.1 `settings` app shell (eframe), tabs, named-pipe client, "agent not running" banner.
-- [ ] `[T2]` M5.2 Visual A1843 keyboard widget (multiple language layouts: ANSI US, ISO IT/UK/DE/FR + custom labels), Normal/Fn layers, highlight remapped keys.
-- [ ] `[T2]` M5.3 Key editor side panel + profile manager (create/duplicate/rename/delete) + presets + "press a key to select".
-- [ ] `[T1]` M5.4 Top row / Battery / General / About tabs.
-- [ ] `[T1]` M5.5 i18n (English, Italian) + language switch.
-- [ ] `[T1]` M5.6 Import/export config and profiles.
+- [x] `[T2]` M5.1 `settings` app shell (eframe), tabs, named-pipe client, "agent not running" banner. _(2026-10-25 — M5.1 completed)_
+- [x] `[T2]` M5.2 Visual A1843 keyboard widget (multiple language layouts: ANSI US, ISO IT/UK/DE/FR + custom labels), Normal/Fn layers, highlight remapped keys. _(2026-10-25 — M5.2 completed)_
+- [x] `[T2]` M5.3 Key editor side panel + profile manager (create/duplicate/rename/delete) + presets + "press a key to select". _(2026-10-25 — M5.3 completed)_
+- [x] `[T1]` M5.4 Top row / Battery / General / About tabs. _(2026-10-25 — M5.4 completed)_
+- [x] `[T1]` M5.5 i18n (English, Italian) + language switch. _(2026-10-25 — M5.5 completed)_
+- [x] `[T1]` M5.6 Import/export config and profiles. _(2026-10-25 — M5.6 completed)_
+**Exit:** GUI renders visual A1843 layout, profile manager operational, hot-swaps active table via IPC, zero background footprint when closed. — **MILESTONE 5 COMPLETE ✅**
 
 ## M6 — Hardening & performance verification
 - [ ] `[T3]` M6.1 Measure and document NFR-P1…P5 (RAM, idle CPU, hook latency, binary size).

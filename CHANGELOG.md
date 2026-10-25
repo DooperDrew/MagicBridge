@@ -4,6 +4,31 @@ All development steps, hardware discoveries, architectural decisions, and commit
 
 ---
 
+## 2026-10-25 — Milestone 5: Settings GUI (Completed ✅)
+
+### M5.1..M5.6 — Standalone `eframe`/`egui` Settings GUI with Visual Keyboard & Profiles
+- Implemented `crates/settings` (`magicbridge-settings.exe`):
+  - Standalone native binary opening a `~920x540` window; exits completely upon close with zero resident memory (`NFR-P5`).
+  - Top banner with one-click "Start Agent" button when `magicbridge-agent.exe` is not running.
+  - Named Pipe IPC client connecting to `\\.\pipe\MagicBridge_Agent_IPC` for instant live status queries and atomic table reloading (`F7.5`).
+- Visual A1843 Keyboard Widget:
+  - Drawn to scale with all 109 keys across 3 distinct clusters (Main, Navigation, and Numpad).
+  - Physical & Language layout switching (`ISO Italian`, `ANSI US`, `ISO UK`, `ISO German`, `ISO French`, and custom labels).
+  - Normal vs. Fn layer toggling with visual highlighting for remapped keys.
+  - Interactive Key Editor side panel and "Press a key to select" mode.
+  - Modifier presets dropdown (Windows layout, Mac layout, Reset All).
+- Complete Tab Navigation:
+  - **Keyboard:** Profile bar (Create, Duplicate, Rename, Delete), visual map, layout selector, and key editor.
+  - **Top Row & Fn:** Mode toggle (Media-first vs. F-keys first), toggle hotkey, and Fn fallback key selector.
+  - **Battery:** Live gauge/percentage, charging indicator, alert threshold, and poll interval.
+  - **General:** UI language selector, autostart toggle (`HKCU\...\Run`), pause hotkey, game mode process list, and configuration import/export.
+  - **About:** Diagnostic daemon status, version, open-source license, and GitHub repository link.
+- Zero Hardcoded UI Text (i18n):
+  - English (`locales/en.toml`) and Italian (`locales/it.toml`) translation dictionaries with dynamic runtime switching.
+- Subagent: `T2-UI-M5` (Claude 3.7 Sonnet).
+
+---
+
 ## 2026-10-25 — Milestone 4: Custom Actions & Battery (Completed ✅)
 
 ### M4.1 & M4.2 — Off-Thread Action Dispatcher & Direct Apple HID Battery Reader
