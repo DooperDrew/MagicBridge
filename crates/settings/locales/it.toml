@@ -6,6 +6,7 @@ keyboard = "Tastiera"
 top_row = "Tasti Funzione & Fn"
 battery = "Batteria"
 general = "Generale"
+architecture = "Architettura"
 about = "Informazioni"
 
 [banner]

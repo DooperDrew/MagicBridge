@@ -6,6 +6,7 @@ keyboard = "Keyboard"
 top_row = "Top Row & Fn"
 battery = "Battery"
 general = "General"
+architecture = "Architecture"
 about = "About"
 
 [banner]

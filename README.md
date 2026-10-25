@@ -14,6 +14,7 @@
 [Features](#key-features) •
 [Architecture](#architecture-overview) •
 [User Guide](docs/user-guide.md) •
+[Multi-Agent Guide](docs/multi-agent-methodology.md) •
 [Building & Running](#building--running) •
 [Roadmap](#roadmap--milestones) •
 [Contributing](#contributing)

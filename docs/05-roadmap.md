@@ -70,3 +70,9 @@ Goal: learn exactly what the A1843 sends on Windows, over USB and Bluetooth.
 - [x] `[T1]` M7.2 Optional: simple installer, and an uninstall that removes the autostart entry. _(2026-10-25 — M7.2 completed)_
 - [x] `[T1]` M7.3 User README: install, features, known limitations (elevated windows, anti-cheat note). _(2026-10-25 — M7.3 completed)_
 **Exit:** Automated release packaging script (package-release.ps1), user-space installer/uninstaller, and exhaustive user-guide.md. — **MILESTONE 7 COMPLETE ✅**
+
+## M8 — Multi-Agent Architecture Documentation & Distribution Sync
+- [x] `[T1]` M8.1 Create didactic multi-agent parallelization guide (`docs/multi-agent-methodology.md`) detailing the Hub-and-Spoke Lead/Worker model, dynamic model tiers, sole committer protocol, and phase schemes. _(2026-10-25 — M8.1 completed)_
+- [x] `[T2]` M8.2 Add dedicated "Architecture" tab in `magicbridge-settings` GUI with interactive didactic breakdown and GitHub links. _(2026-10-25 — M8.2 completed)_
+- [x] `[T1]` M8.3 Publish GitHub Release `v0.1.0` with bundled distribution archive (`dist/MagicBridge-v0.1.0-windows-x64.zip`) verifying 100% parity between local repository and GitHub. _(2026-10-25 — M8.3 completed)_
+**Exit:** Comprehensive multi-agent methodology guide, interactive GUI architecture tab, and GitHub Release v0.1.0 published with binary asset. — **MILESTONE 8 COMPLETE ✅**

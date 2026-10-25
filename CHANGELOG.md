@@ -4,6 +4,22 @@ All development steps, hardware discoveries, architectural decisions, and commit
 
 ---
 
+## 2026-10-25 — Milestone 8: Multi-Agent Methodology & Release Parity (Completed ✅)
+
+### M8.1..M8.3 — Didactic Multi-Agent Guide, GUI Architecture Tab & Release Parity
+- Created comprehensive didactic documentation [`docs/multi-agent-methodology.md`](docs/multi-agent-methodology.md):
+  - In-depth explanation of the Hub-and-Spoke Lead/Worker model, dynamic model selection tiers (T1/T2/T3), Sole Committer protocol, and the 4-step Lead Verification Gate.
+  - Complete Mermaid sequence and dataflow architecture diagrams for all 5 parallel execution phases.
+  - Subagent taxonomy, reporting contract templates, and instructions on how to extend the workflow for future tasks.
+- Added dedicated **"🤖 Architecture"** tab in `magicbridge-settings` (`crates/settings/src/views/architecture_view.rs`):
+  - Interactive multi-section view covering Overview, Hub-and-Spoke model, Complexity Tiers, Parallel Phases, and Extending Over Time.
+  - Added direct browser links to GitHub documentation and localization keys in English (`en.toml`) and Italian (`it.toml`).
+- Release & Distribution Parity (M8.3):
+  - Created official **GitHub Release `v0.1.0`** attaching the distribution archive `MagicBridge-v0.1.0-windows-x64.zip` directly to the release page.
+  - Re-synced and confirmed 100% parity between local repository, git remotes, and GitHub release assets.
+
+---
+
 ## 2026-10-25 — Milestone 7: Packaging & Release Automation (Completed ✅)
 
 ### M7.1..M7.3 — Portable ZIP Script, User-Space Installer & User Guide

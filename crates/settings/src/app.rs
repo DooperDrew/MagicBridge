@@ -12,6 +12,7 @@ use magicbridge_core::{Config, atomic_write, default_config_path};
 
 use crate::i18n::I18n;
 use crate::ipc::SettingsIpc;
+use crate::views::architecture_view::ArchitectureViewState;
 use crate::views::general_view::GeneralViewState;
 use crate::views::keyboard_view::{self, ConfigChange, KeyboardViewState};
 use crate::views::top_row_view::{self, TopRowViewState};
@@ -25,6 +26,7 @@ pub enum SettingsTab {
     TopRow,
     Battery,
     General,
+    Architecture,
     About,
 }
 
@@ -41,6 +43,7 @@ pub struct MagicBridgeApp {
     pub keyboard_state: KeyboardViewState,
     pub top_row_state: TopRowViewState,
     pub general_state: GeneralViewState,
+    pub architecture_state: ArchitectureViewState,
 }
 
 impl MagicBridgeApp {
@@ -66,6 +69,7 @@ impl MagicBridgeApp {
             keyboard_state: KeyboardViewState::default(),
             top_row_state: TopRowViewState::default(),
             general_state,
+            architecture_state: ArchitectureViewState::default(),
         }
     }
 
@@ -145,6 +149,7 @@ impl App for MagicBridgeApp {
                     (SettingsTab::TopRow, "🎛 ", "tab.top_row"),
                     (SettingsTab::Battery, "🔋 ", "tab.battery"),
                     (SettingsTab::General, "⚙ ", "tab.general"),
+                    (SettingsTab::Architecture, "🤖 ", "tab.architecture"),
                     (SettingsTab::About, "ℹ ", "tab.about"),
                 ];
 
@@ -210,6 +215,9 @@ impl App for MagicBridgeApp {
                 ) {
                     self.persist_and_notify();
                 }
+            }
+            SettingsTab::Architecture => {
+                self.architecture_state.ui(ui, &self.i18n);
             }
             SettingsTab::About => {
                 about_view::show(ui, self.daemon_status.as_ref(), &self.i18n);
