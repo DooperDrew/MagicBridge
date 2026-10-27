@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Guided Windows Setup Wizard for MagicBridge.
 
@@ -97,7 +97,7 @@ if (-not $SourceDir) {
 }
 
 # Resolve version
-$Version = "0.2.0"
+$Version = "0.2.1"
 $AgentExePath = Join-Path $SourceDir "magicbridge-agent.exe"
 if (Test-Path $AgentExePath) {
     try {
@@ -105,7 +105,7 @@ if (Test-Path $AgentExePath) {
         if ($verInfo) { $Version = $verInfo.Trim() }
     } catch {}
 }
-if ($Version -eq "0.2.0") {
+if ($Version -eq "0.2.1") {
     $CargoToml = Join-Path $ScriptDir "..\Cargo.toml"
     if (Test-Path $CargoToml) {
         $content = Get-Content $CargoToml -Raw

@@ -1,0 +1,31 @@
+﻿# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.9.0.schema.json
+PackageIdentifier: DooperDrew.MagicBridge
+PackageVersion: 0.2.1
+PackageLocale: en-US
+Publisher: DooperDrew
+PublisherUrl: https://github.com/DooperDrew
+PublisherSupportUrl: https://github.com/DooperDrew/magicbridge/issues
+Author: DooperDrew
+PackageName: MagicBridge
+PackageUrl: https://github.com/DooperDrew/magicbridge
+License: MIT
+LicenseUrl: https://github.com/DooperDrew/magicbridge/blob/main/LICENSE
+Copyright: Copyright (c) 2026 DooperDrew
+ShortDescription: Native, ultra-lightweight Windows utility making Apple Magic Keyboards behave as first-class Windows keyboards.
+Description: |
+  MagicBridge is a native, ultra-lightweight Windows 10/11 x64 utility that makes the Apple Magic Keyboard
+  with Numeric Keypad (model A1843) feel right at home on Windows. Features user-mode Fn layer, top-row media keys
+  vs. F-keys toggling, modifier presets, direct HID battery reporting, and zero background idle CPU.
+Moniker: magicbridge
+Tags:
+  - keyboard
+  - apple
+  - magic-keyboard
+  - remap
+  - hotkey
+  - battery
+  - rust
+  - windows11
+ReleaseNotesUrl: https://github.com/DooperDrew/magicbridge/releases/tag/v0.2.1
+ManifestType: defaultLocale
+ManifestVersion: 1.9.0

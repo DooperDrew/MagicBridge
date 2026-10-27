@@ -4,7 +4,7 @@
 
 **A tiny, invisible, native Windows 10/11 utility that makes the Apple Magic Keyboard with Numeric Keypad (A1843) feel right at home on Windows.**
 
-[![Latest Release](https://img.shields.io/github/v/release/DooperDrew/magicbridge?logo=github&label=release%20v0.2.0)](https://github.com/DooperDrew/magicbridge/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/DooperDrew/magicbridge?logo=github&label=release%20v0.2.1)](https://github.com/DooperDrew/magicbridge/releases/latest)
 [![Rust Stable](https://img.shields.io/badge/rust-stable-brightgreen.svg)](https://www.rust-lang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform: Windows 10/11 x64](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-informational.svg)](https://microsoft.com/windows)
@@ -73,7 +73,7 @@ Install directly using the official Windows Package Manager:
 winget install DooperDrew.MagicBridge
 
 # Or install directly from the local repository manifest:
-winget install --manifest packaging/winget/manifests/d/DooperDrew/MagicBridge/0.2.0/
+winget install --manifest packaging/winget/manifests/d/DooperDrew/MagicBridge/0.2.1/
 ```
 
 ### Option 2: Scoop Package Manager
@@ -83,7 +83,7 @@ scoop install https://raw.githubusercontent.com/DooperDrew/magicbridge/main/pack
 ```
 
 ### Option 3: Guided Windows Setup Wizard (Zero-Elevation GUI)
-1. Download the latest release archive (`MagicBridge-v0.2.0-windows-x64.zip`) from [GitHub Releases](https://github.com/DooperDrew/magicbridge/releases/latest).
+1. Download the latest release archive (`MagicBridge-v0.2.1-windows-x64.zip`) from [GitHub Releases](https://github.com/DooperDrew/magicbridge/releases/latest).
 2. Extract the ZIP and double-click **`setup.cmd`** (or execute `.\setup-wizard.ps1` in PowerShell).
 3. The graphical setup wizard lets you:
    - Choose your install location (defaults to `%LOCALAPPDATA%\Programs\MagicBridge`).
@@ -101,7 +101,7 @@ scoop install https://raw.githubusercontent.com/DooperDrew/magicbridge/main/pack
 ```
 
 ### Option 4: Portable ZIP (No Installation Required)
-1. Download and extract `MagicBridge-v0.2.0-windows-x64.zip`.
+1. Download and extract `MagicBridge-v0.2.1-windows-x64.zip`.
 2. Double-click `magicbridge-agent.exe`.
 3. The keyboard tray icon will appear immediately. Zero registry keys touched. Runs seamlessly from a USB drive or local folder.
 

@@ -22,7 +22,7 @@ flowchart LR
 - **Zero Administrator Elevation Required:** Installs cleanly into `%LOCALAPPDATA%\Programs\MagicBridge` without triggering UAC elevation prompts (satisfies enterprise security and portable operation).
 - **Control Panel Integration:** Writes registry entries to `HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\MagicBridge` with:
   - DisplayName: "MagicBridge (Apple Magic Keyboard for Windows)"
-  - DisplayVersion: "0.2.0"
+  - DisplayVersion: "0.2.1"
   - Publisher: "MagicBridge Contributors"
   - UninstallString: `uninstall.exe` or `powershell.exe -ExecutionPolicy Bypass -File uninstall.ps1`
   - DisplayIcon: `magicbridge-agent.exe,0`

@@ -1,0 +1,17 @@
+﻿# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.9.0.schema.json
+PackageIdentifier: DooperDrew.MagicBridge
+PackageVersion: 0.2.1
+InstallerType: zip
+NestedInstallerType: portable
+NestedInstallerFiles:
+  - RelativeFilePath: magicbridge-agent.exe
+    PortableCommandAlias: magicbridge-agent
+  - RelativeFilePath: magicbridge-settings.exe
+    PortableCommandAlias: magicbridge
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/DooperDrew/magicbridge/releases/download/v0.2.1/MagicBridge-v0.2.1-windows-x64.zip
+    InstallerSha256: B2B8003ED078F093D7B2E6586BFAFBC4030A1EE2C21BCEE903111ECB1429BE16
+    UpgradeBehavior: install
+ManifestType: installer
+ManifestVersion: 1.9.0

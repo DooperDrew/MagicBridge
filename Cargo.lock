@@ -1403,7 +1403,7 @@ checksum = "dfa686283ad6dd069f105e5ab091b04c62850d3e4cf5d67debad1933f55023df"
 
 [[package]]
 name = "hid-probe"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "magicbridge-core",
  "windows 0.62.2",
@@ -1717,7 +1717,7 @@ checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
 
 [[package]]
 name = "magicbridge-agent"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "arc-swap",
  "magicbridge-core",
@@ -1729,7 +1729,7 @@ dependencies = [
 
 [[package]]
 name = "magicbridge-core"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "serde",
  "toml",
@@ -1737,7 +1737,7 @@ dependencies = [
 
 [[package]]
 name = "magicbridge-settings"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "eframe",
  "egui",

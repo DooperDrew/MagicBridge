@@ -4,7 +4,7 @@ All development steps, hardware discoveries, architectural decisions, and commit
 
 ---
 
-## 2026-10-27 — Milestone 9.5: Automated UI QA Loop with `ui-qa-tester` (Completed ✅, closes #17, closes #18)
+## 2026-10-27 — MagicBridge v0.2.1: Autonomous UI QA Loop & AccessKit Accessibility (Release ✅, closes #17, closes #18)
 
 ### Objective & QA Loop Execution
 - Connected `ui-qa-tester` (`https://github.com/dooperdrew/ui-qa-tester`) to MagicBridge via dedicated configuration `qa-session.toml` in the repository root.

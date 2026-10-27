@@ -1,7 +1,7 @@
-﻿; Inno Setup Script for MagicBridge
+; Inno Setup Script for MagicBridge
 ; Zero-elevation Windows installer for Apple Magic Keyboard with Numeric Keypad (A1843)
 #define MyAppName "MagicBridge"
-#define MyAppVersion "0.2.0"
+#define MyAppVersion "0.2.1"
 #define MyAppPublisher "MagicBridge Contributors"
 #define MyAppURL "https://github.com/DooperDrew/magicbridge"
 #define MyAppExeName "magicbridge-settings.exe"
