@@ -303,6 +303,9 @@ pub struct Config {
     /// Percentage threshold for low-battery notification (F6.2).
     #[serde(default = "default_battery_threshold")]
     pub low_battery_threshold_percent: u8,
+    /// Whether dynamic battery percentage badge on tray icon is enabled (IMP-04).
+    #[serde(default = "default_battery_tray_badge")]
+    pub battery_tray_badge: bool,
     /// UI language code, e.g. "en" or "it" (F7.3).
     #[serde(default = "default_ui_language")]
     pub ui_language: String,
@@ -335,6 +338,10 @@ const fn default_battery_threshold() -> u8 {
     15
 }
 
+const fn default_battery_tray_badge() -> bool {
+    true
+}
+
 fn default_ui_language() -> String {
     "en".to_string()
 }
@@ -351,6 +358,7 @@ impl Default for Config {
             autostart: false,
             battery_poll_minutes: default_battery_poll_minutes(),
             low_battery_threshold_percent: default_battery_threshold(),
+            battery_tray_badge: default_battery_tray_badge(),
             ui_language: default_ui_language(),
             pause_hotkey: None,
             debug_logging: false,

@@ -1,4 +1,4 @@
-﻿[app]
+[app]
 title = "MagicBridge Settings"
 
 [tab]
@@ -102,6 +102,8 @@ unknown = "Unknown / Not Detected"
 poll_interval = "Battery Poll Interval (minutes):"
 threshold = "Low-Battery Alert Threshold (%):"
 threshold_desc = "A Windows toast notification will be displayed once when battery falls below this level."
+tray_badge = "Show live battery percentage in system tray icon"
+tray_badge_desc = "Dynamically renders the battery percentage and charging indicator onto the system tray icon."
 info = "Battery percentage is queried directly from Apple Vendor Collection 0xFF00:0x0014 Report 0x90 over both USB and Bluetooth."
 
 [general]

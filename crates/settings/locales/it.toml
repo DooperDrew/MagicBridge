@@ -1,4 +1,4 @@
-﻿[app]
+[app]
 title = "Impostazioni MagicBridge"
 
 [tab]
@@ -102,6 +102,8 @@ unknown = "Sconosciuto / Non Rilevato"
 poll_interval = "Intervallo Interrogazione (minuti):"
 threshold = "Soglia Avviso Batteria Scarica (%):"
 threshold_desc = "Una notifica Windows verrà mostrata quando la percentuale della batteria scende sotto questo livello."
+tray_badge = "Mostra percentuale batteria nell'icona della barra di sistema"
+tray_badge_desc = "Renderizza dinamicamente la percentuale della batteria e lo stato di carica sull'icona della barra delle applicazioni."
 info = "La percentuale della batteria viene letta direttamente dalla Apple Vendor Collection 0xFF00:0x0014 Report 0x90 sia via USB che Bluetooth."
 
 [general]

@@ -104,9 +104,20 @@ pub fn show(
             }
         });
 
+        ui.add_space(4.0);
+
+        // 5. Dynamic Battery Tray Badge Toggle (IMP-04)
+        if ui
+            .checkbox(&mut config.battery_tray_badge, i18n.t("battery.tray_badge"))
+            .on_hover_text(i18n.t("battery.tray_badge_desc"))
+            .changed()
+        {
+            modified = true;
+        }
+
         ui.separator();
 
-        // 5. Hardware Info Note (from M0 spike)
+        // 6. Hardware Info Note (from M0 spike)
         ui.label(i18n.t("battery.info"));
     });
 

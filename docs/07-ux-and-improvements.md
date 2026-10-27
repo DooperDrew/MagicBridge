@@ -109,7 +109,7 @@ flowchart TD
 | **P1** | **IMP-01** | **Guided Installer Wizard** | Self-contained executable wizard for zero-friction installation and uninstallation. | `[T1]` (`flash`) |
 | **P1** | **IMP-02** | **Initial Configuration Wizard** | First-run onboarding wizard in `magicbridge-settings` configuring layout, modifiers, and autostart. | `[T2]` (`flash` / `pro`) |
 | **P1** | **IMP-03** | **Responsive Settings UI** | Dynamic scaling of visual A1843 keyboard and adaptive navigation across all window sizes. | `[T2]` (`flash` / `pro`) |
-| **P2** | **IMP-04** | **Dynamic Tray Battery Badge** | Custom-rendered GDI tray icon displaying battery percentage and charging indicator. | `[T2]` (`flash` / `pro`) |
+| **P2** | **IMP-04** | **Dynamic Tray Battery Badge** | Custom-rendered GDI tray icon displaying battery percentage and charging indicator. *(Completed in M10.4)* | `[T2]` (`flash` / `pro`) |
 | **P2** | **IMP-05** | **DDC/CI Monitor Brightness** | Integrate `dxva2.dll` to adjust physical monitor brightness on F1 (Dim) and F2 (Brighten). | `[T3]` (`pro`) |
 | **P3** | **IMP-06** | **Per-App Profile Auto-Switching** | Background detection of active foreground process to automatically switch keyboard profiles. | `[T2]` (`flash`) |
 | **P3** | **IMP-07** | **GitHub Release Auto-Checker** | Non-intrusive check against GitHub API to notify user when a newer release is published. | `[T1]` (`flash_lite`) |

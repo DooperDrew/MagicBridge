@@ -15,6 +15,7 @@ pub mod logger;
 pub mod single_instance;
 pub mod state;
 pub mod tray;
+pub mod tray_icon;
 pub mod window;
 
 pub use action_worker::{ActionWorkerHandle, dispatch_action, start_action_worker};

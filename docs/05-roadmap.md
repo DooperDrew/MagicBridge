@@ -95,8 +95,8 @@ Goal: Elevate the out-of-the-box user experience with guided installation, inter
 - [x] `[T1]` M10.1 Guided Windows Installation Wizard (`setup-wizard.ps1`, `setup.cmd`, `installer.iss`): zero-elevation install into `%LOCALAPPDATA%`, start menu, and desktop shortcuts. _(2026-10-25 — M10.1 completed, closes #12)_
 - [x] `[T2]` M10.2 First-Run Onboarding Wizard in `magicbridge-settings`: welcome, hardware auto-detect, layout & modifier preset picker, Fn trigger selection, and autostart toggle. _(2026-10-25 — M10.2 completed, closes #13)_
 - [x] `[T2]` M10.3 Responsive UI layout in `magicbridge-settings`: dynamic visual A1843 keyboard scaling (`key_size` clamp) and adaptive sidebar/compact drawer navigation for compact and high-DPI screens. _(2026-10-25 — M10.3 completed, closes #14)_
-- [ ] `[T2]` M10.4 Dynamic Tray Battery Badge & Status: render live battery percentage and charging indicator directly on the system tray icon.
-**Exit:** Seamless guided installation, first-run wizard, fluid responsive Settings GUI, and live battery tray indicator.
+- [x] `[T2]` M10.4 Dynamic Tray Battery Badge & Status: render live battery percentage, charging lightning bolt, and connection status dynamically on the system tray icon via GDI off-screen rendering (`crates/agent/src/tray_icon.rs`), with user toggle in Settings Battery tab and i18n support. _(2026-10-27 — M10.4 completed, closes #15)_
+**Exit:** Seamless guided installation, first-run wizard, fluid responsive Settings GUI, and live battery tray indicator. — **MILESTONE 10 COMPLETE ✅**
 
 ## M11 — GitHub Copilot Agent Integration & Cloud Multi-Agent Workflow
 Goal: Establish seamless collaborative development between the local Lead Orchestrator Agent (Antigravity) and GitHub Copilot (Agent & IDE), enforcing the Sole Committer Protocol, repository safety budgets, and autonomous task handoffs. Documented in `docs/multi-agent-methodology.md`.

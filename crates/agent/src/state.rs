@@ -16,6 +16,8 @@ pub struct DaemonState {
     pub enabled: bool,
     /// Latest battery percentage (F6.1), if known.
     pub battery_percent: Option<u8>,
+    /// Whether the battery is currently charging (F6.1).
+    pub is_charging: bool,
     /// Whether an Apple keyboard is currently connected (NFR-S2).
     pub is_connected: bool,
     /// Transport description ("USB", "Bluetooth", etc.).
@@ -34,6 +36,7 @@ impl DaemonState {
             config_path,
             enabled: true,
             battery_percent: None,
+            is_charging: false,
             is_connected: false,
             transport_name: None,
             connected_devices: HashSet::new(),
@@ -62,6 +65,7 @@ impl DaemonState {
         if !self.is_connected {
             self.transport_name = None;
             self.battery_percent = None;
+            self.is_charging = false;
         }
         was_connected && !self.is_connected
     }
@@ -78,6 +82,7 @@ impl DaemonState {
         self.transport_name = last_transport;
         if !self.is_connected {
             self.battery_percent = None;
+            self.is_charging = false;
         }
     }
 

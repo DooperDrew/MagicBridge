@@ -55,14 +55,27 @@ pub fn copy_to_sz_buf(dest: &mut [u16], text: &str) {
 #[derive(Debug)]
 pub struct TrayIcon {
     hwnd: HWND,
-    hicon: HICON,
+    default_hicon: HICON,
+    custom_hicon: Option<HICON>,
 }
 
 impl TrayIcon {
     /// Creates and displays the system tray icon.
     pub fn create(hwnd: HWND, initial_state: &DaemonState) -> Result<Self, windows::core::Error> {
         // SAFETY: LoadIconW with IDI_APPLICATION loads the standard system application icon.
-        let hicon = unsafe { LoadIconW(None, IDI_APPLICATION)? };
+        let default_hicon = unsafe { LoadIconW(None, IDI_APPLICATION)? };
+
+        let mut custom_hicon = None;
+        let active_hicon = if initial_state.config.battery_tray_badge {
+            if let Ok(hicon) = crate::tray_icon::create_battery_tray_icon(initial_state) {
+                custom_hicon = Some(hicon);
+                hicon
+            } else {
+                default_hicon
+            }
+        } else {
+            default_hicon
+        };
 
         let mut nid = NOTIFYICONDATAW {
             cbSize: std::mem::size_of::<NOTIFYICONDATAW>() as u32,
@@ -70,7 +83,7 @@ impl TrayIcon {
             uID: TRAY_ICON_ID,
             uFlags: NIF_MESSAGE | NIF_ICON | NIF_TIP,
             uCallbackMessage: WM_TRAY_CALLBACK,
-            hIcon: hicon,
+            hIcon: active_hicon,
             ..Default::default()
         };
 
@@ -82,18 +95,38 @@ impl TrayIcon {
             Shell_NotifyIconW(NIM_ADD, &nid).ok()?;
         }
 
-        Ok(Self { hwnd, hicon })
+        Ok(Self {
+            hwnd,
+            default_hicon,
+            custom_hicon,
+        })
     }
 
     /// Re-adds the tray icon (e.g. when Explorer restarts and sends `TaskbarCreated`).
-    pub fn re_add(&self, state: &DaemonState) {
+    pub fn re_add(&mut self, state: &DaemonState) {
+        let active_hicon = if state.config.battery_tray_badge {
+            if let Ok(new_hicon) = crate::tray_icon::create_battery_tray_icon(state) {
+                if let Some(old) = self.custom_hicon.replace(new_hicon) {
+                    crate::tray_icon::destroy_hicon(old);
+                }
+                new_hicon
+            } else {
+                self.custom_hicon.unwrap_or(self.default_hicon)
+            }
+        } else {
+            if let Some(old) = self.custom_hicon.take() {
+                crate::tray_icon::destroy_hicon(old);
+            }
+            self.default_hicon
+        };
+
         let mut nid = NOTIFYICONDATAW {
             cbSize: std::mem::size_of::<NOTIFYICONDATAW>() as u32,
             hWnd: self.hwnd,
             uID: TRAY_ICON_ID,
             uFlags: NIF_MESSAGE | NIF_ICON | NIF_TIP,
             uCallbackMessage: WM_TRAY_CALLBACK,
-            hIcon: self.hicon,
+            hIcon: active_hicon,
             ..Default::default()
         };
 
@@ -106,8 +139,8 @@ impl TrayIcon {
         }
     }
 
-    /// Updates the tray icon tooltip from the latest daemon state.
-    pub fn update_tooltip(&self, state: &DaemonState) {
+    /// Updates the tray icon and tooltip from the latest daemon state.
+    pub fn update(&mut self, state: &DaemonState) {
         let mut nid = NOTIFYICONDATAW {
             cbSize: std::mem::size_of::<NOTIFYICONDATAW>() as u32,
             hWnd: self.hwnd,
@@ -119,10 +152,30 @@ impl TrayIcon {
         let tooltip = state.format_tooltip();
         copy_to_sz_tip(&mut nid.szTip, &tooltip);
 
+        // Dynamically update tray icon if badge is enabled
+        if state.config.battery_tray_badge {
+            if let Ok(new_hicon) = crate::tray_icon::create_battery_tray_icon(state) {
+                if let Some(old) = self.custom_hicon.replace(new_hicon) {
+                    crate::tray_icon::destroy_hicon(old);
+                }
+                nid.uFlags |= NIF_ICON;
+                nid.hIcon = new_hicon;
+            }
+        } else if let Some(old) = self.custom_hicon.take() {
+            crate::tray_icon::destroy_hicon(old);
+            nid.uFlags |= NIF_ICON;
+            nid.hIcon = self.default_hicon;
+        }
+
         // SAFETY: `nid` is initialized with valid window handle and ID.
         unsafe {
             let _ = Shell_NotifyIconW(NIM_MODIFY, &nid);
         }
+    }
+
+    /// Backwards-compatible alias for update.
+    pub fn update_tooltip(&mut self, state: &DaemonState) {
+        self.update(state);
     }
 
     /// Displays a balloon or toast notification from the system tray icon (F6.2).
@@ -304,6 +357,9 @@ impl Drop for TrayIcon {
         // SAFETY: Cleans up the tray icon upon agent exit.
         unsafe {
             let _ = Shell_NotifyIconW(NIM_DELETE, &nid);
+        }
+        if let Some(custom) = self.custom_hicon.take() {
+            crate::tray_icon::destroy_hicon(custom);
         }
     }
 }

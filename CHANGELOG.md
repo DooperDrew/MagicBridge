@@ -4,6 +4,34 @@ All development steps, hardware discoveries, architectural decisions, and commit
 
 ---
 
+## 2026-10-27 — Milestone 10.4: Live Battery Tray Badge & Custom GDI Indicator (Completed ✅, closes #15)
+
+### Objective & Architecture
+- Implemented **IMP-04** (Dynamic Tray Battery Badge) in `crates/agent/src/tray_icon.rs` to render real-time battery status, connection state, charging indicator, and pause status directly on the Windows notification area system tray icon.
+- Engineered 32-bit ARGB off-screen DIB section rendering via Windows GDI and `CreateIconIndirect`, providing true per-pixel alpha channel transparency compatible with Windows 10/11 taskbars without memory leaks.
+
+### Key Deliverables & Changes
+1. **Dynamic Battery Tray Badge Renderer (`crates/agent/src/tray_icon.rs`):**
+   - Implemented `RgbaCanvas` supporting per-pixel ARGB drawing, axis-aligned rectangles, shadows, and a custom 3x5 bitmap font for crisp 2-digit percentage labels ("0".."100").
+   - Responsive geometry automatically adapts to system DPI metrics (`SM_CXSMICON` / `SM_CYSMICON`, 16x16 up to 48x48).
+   - Dynamic states rendered:
+     - **Connected (Battery Gauge):** Visual battery chassis with fill color reflecting battery thresholds: Green (>25%), Amber (11-25%), Red (<= threshold).
+     - **Charging State:** Electric yellow lightning bolt glyph with dark contrast outline overlaying the battery frame.
+     - **Paused / Game Mode:** Centered amber pause bars (`||`).
+     - **Disconnected:** Subtle dark slate keyboard chassis with disconnected status indicator.
+   - Resource-safe GDI lifecycle: `CreateDIBSection` and `CreateBitmap` allocated temporary handles are deleted immediately with `DeleteObject` after `CreateIconIndirect`, and custom `HICON` handles are destroyed with `DestroyIcon` upon replacement or application shutdown.
+2. **Tray Icon Lifecycle & Message Pump Integration (`crates/agent/src/tray.rs`, `window.rs`):**
+   - Extended `TrayIcon` to track both `default_hicon` and `custom_hicon`.
+   - Updated `poll_battery`, `device arrival/removal`, `WM_COMMAND`, `WM_POWERBROADCAST`, and `WM_IPC_STATE_UPDATED` to pass latest `DaemonState` (including `is_charging`).
+3. **Configuration & GUI Toggle (`crates/core/src/config.rs`, `crates/settings/src/views/battery_view.rs`):**
+   - Added `battery_tray_badge: bool` (default `true`) to `Config`.
+   - Added interactive checkbox in Settings &rarr; Battery tab with localized descriptions in `en.toml` and `it.toml`.
+4. **Verification & Quality Gate:**
+   - Expanded unit test suite to 139 passing tests (including direct Win32 `HICON` generation and canvas pixel tests).
+   - Autonomous UI crawler (`ui-qa-tester`) verified 0 findings across 15 steps and 9 UI states.
+
+---
+
 ## 2026-10-27 — MagicBridge v0.2.1: Autonomous UI QA Loop & AccessKit Accessibility (Release ✅, closes #17, closes #18)
 
 ### Objective & QA Loop Execution

@@ -92,9 +92,10 @@ impl WindowData {
     fn poll_battery(&mut self) {
         if !self.state.is_connected {
             self.state.battery_percent = None;
+            self.state.is_charging = false;
             self.low_battery_notified = false;
-            if let Some(ref tray) = self.tray {
-                tray.update_tooltip(&self.state);
+            if let Some(ref mut tray) = self.tray {
+                tray.update(&self.state);
             }
             return;
         }
@@ -102,9 +103,10 @@ impl WindowData {
         if let Some(status) = crate::battery::query_battery(&self.state.connected_devices) {
             let old_pct = self.state.battery_percent;
             self.state.battery_percent = Some(status.percentage);
+            self.state.is_charging = status.is_charging;
 
-            if let Some(ref tray) = self.tray {
-                tray.update_tooltip(&self.state);
+            if let Some(ref mut tray) = self.tray {
+                tray.update(&self.state);
             }
 
             self.check_low_battery_notification(old_pct, status);
@@ -347,8 +349,8 @@ unsafe extern "system" fn wnd_proc(
                         data.state.on_device_arrival(&path, &transport_str);
                         data.update_hook_state();
                         data.poll_battery();
-                        if let Some(ref tray) = data.tray {
-                            tray.update_tooltip(&data.state);
+                        if let Some(ref mut tray) = data.tray {
+                            tray.update(&data.state);
                         }
                     }
                 }
@@ -366,8 +368,8 @@ unsafe extern "system" fn wnd_proc(
                         }
                         data.update_hook_state();
                         data.poll_battery();
-                        if let Some(ref tray) = data.tray {
-                            tray.update_tooltip(&data.state);
+                        if let Some(ref mut tray) = data.tray {
+                            tray.update(&data.state);
                         }
                     }
                 }
@@ -392,8 +394,8 @@ unsafe extern "system" fn wnd_proc(
                     data.state.sync_connected_devices(&devices);
                     data.update_hook_state();
                     data.poll_battery();
-                    if let Some(ref tray) = data.tray {
-                        tray.update_tooltip(&data.state);
+                    if let Some(ref mut tray) = data.tray {
+                        tray.update(&data.state);
                     }
                 }
                 _ => {}
@@ -431,8 +433,8 @@ unsafe extern "system" fn wnd_proc(
                     &format!("Foreground game status changed: active={is_game}"),
                 );
                 data.update_hook_state();
-                if let Some(ref tray) = data.tray {
-                    tray.update_tooltip(&data.state);
+                if let Some(ref mut tray) = data.tray {
+                    tray.update(&data.state);
                 }
             }
             LRESULT(0)
@@ -447,8 +449,8 @@ unsafe extern "system" fn wnd_proc(
                 data.setup_battery_timer(hwnd);
             }
             data.poll_battery();
-            if let Some(ref tray) = data.tray {
-                tray.update_tooltip(&data.state);
+            if let Some(ref mut tray) = data.tray {
+                tray.update(&data.state);
             }
             LRESULT(0)
         }
@@ -458,22 +460,22 @@ unsafe extern "system" fn wnd_proc(
                 IDM_TOGGLE_ENABLED => {
                     data.state.toggle_enabled();
                     data.update_hook_state();
-                    if let Some(ref tray) = data.tray {
-                        tray.update_tooltip(&data.state);
+                    if let Some(ref mut tray) = data.tray {
+                        tray.update(&data.state);
                     }
                 }
                 IDM_TOPROW_MEDIA_FIRST => {
                     data.state.set_top_row_mode(TopRowMode::MediaKeysFirst);
                     data.recompile_active_table();
-                    if let Some(ref tray) = data.tray {
-                        tray.update_tooltip(&data.state);
+                    if let Some(ref mut tray) = data.tray {
+                        tray.update(&data.state);
                     }
                 }
                 IDM_TOPROW_FKEYS_FIRST => {
                     data.state.set_top_row_mode(TopRowMode::FKeysFirst);
                     data.recompile_active_table();
-                    if let Some(ref tray) = data.tray {
-                        tray.update_tooltip(&data.state);
+                    if let Some(ref mut tray) = data.tray {
+                        tray.update(&data.state);
                     }
                 }
                 IDM_OPEN_SETTINGS => {
@@ -492,8 +494,8 @@ unsafe extern "system" fn wnd_proc(
                     if let Some(name) = profiles.get(idx) {
                         data.state.set_active_profile(name);
                         data.recompile_active_table();
-                        if let Some(ref tray) = data.tray {
-                            tray.update_tooltip(&data.state);
+                        if let Some(ref mut tray) = data.tray {
+                            tray.update(&data.state);
                         }
                     }
                 }
@@ -530,7 +532,7 @@ unsafe extern "system" fn wnd_proc(
         }
         _ if data.taskbar_created_msg != 0 && msg == data.taskbar_created_msg => {
             // Explorer restarted: re-add tray icon.
-            if let Some(ref tray) = data.tray {
+            if let Some(ref mut tray) = data.tray {
                 tray.re_add(&data.state);
             }
             LRESULT(0)

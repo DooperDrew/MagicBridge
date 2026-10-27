@@ -18,6 +18,7 @@ pub mod logger;
 pub mod single_instance;
 pub mod state;
 pub mod tray;
+pub mod tray_icon;
 pub mod window;
 
 use ipc::{AtomicMappingTable, IpcServer};
