@@ -4,6 +4,31 @@ All development steps, hardware discoveries, architectural decisions, and commit
 
 ---
 
+## 2026-10-27 — Milestone 9.5: Automated UI QA Loop with `ui-qa-tester` (Completed ✅, closes #17, closes #18)
+
+### Objective & QA Loop Execution
+- Connected `ui-qa-tester` (`https://github.com/dooperdrew/ui-qa-tester`) to MagicBridge via dedicated configuration `qa-session.toml` in the repository root.
+- Executed multi-cycle autonomous background crawl testing (`magicbridge-settings.exe`):
+  - **Cycle 1 (Initial Crawl):** Discovered 7 findings (2 High visual clipping, 1 Medium UX dead button friction, 4 Medium accessibility gaps). Opened tracking issues #17 and #18.
+  - **Cycle 2:** Fixed Hardware QA layout clipping and keyboard canvas allocation; findings reduced from 7 to 3.
+  - **Cycle 3 & 4:** Added `set_accessible_name` helper leveraging AccessKit `set_label` on interactive dialog controls, sliders, and combo boxes; findings dropped to 2.
+  - **Cycle 5 (Final Verification):** Implemented disabled state on already-active tab buttons and accessible labels for general settings inputs. Resulted in **0 Critical, 0 High, 0 Medium, 0 Low — 100% clean QA run**.
+
+### Key Deliverables & Bug Fixes
+1. **Visual Layout & Responsive Clamping Fixes (Closes #17):**
+   - In `qa_view.rs`, converted the 7-button category selector from a rigid `ui.horizontal` to `ui.horizontal_wrapped`, preventing overflow clipping beyond the 936px window bounds.
+   - Refactored `render_qa_visual_keyboard` to dynamically clamp `unit_size` against `available_width.min(ui.max_rect().width())` without causing child element inflation.
+   - Changed background plate interaction from `Sense::click_and_drag()` to `Sense::hover()`, eliminating ghost custom controls in UIA.
+2. **AccessKit / UIA Accessibility & UX Friction Remediation (Closes #18):**
+   - Implemented `crate::set_accessible_name(ui, id, name)` helper wrapping `ui.ctx().accesskit_node_builder(...)` with `node.set_label(...)`.
+   - Annotated all interactive ComboBoxes (`profile_selector`, `layout_selector`, `presets_dropdown`, `ui_language_combo`, `fn_key_combo`, `dialog_new_layout`) and Singleline/Multiline TextEdits with explicit accessible labels and tooltips.
+   - Fixed UX friction on active tab buttons: tab buttons now render as disabled when already selected (`ui.add_enabled(!is_active, btn)`), providing unambiguous accessibility state feedback to assistive technologies and autonomous crawlers.
+3. **Repository Tooling:**
+   - Added `qa-session.toml` configured for headless background crawling with targeted navigation goals for all 8 application tabs.
+   - Added `qa-reports/` to `.gitignore`.
+
+---
+
 ## 2026-10-25 — Milestone 11: GitHub Copilot Agent Integration & Cloud Multi-Agent Workflow (Completed ✅, closes #16)
 
 ### Objective & Architecture

@@ -72,11 +72,12 @@ pub fn show(
         // 3. Low Battery Threshold Slider (F6.2)
         ui.horizontal(|ui| {
             ui.label(i18n.t("battery.threshold"));
+            let slider = egui::Slider::new(&mut config.low_battery_threshold_percent, 5..=50)
+                .text(i18n.t("battery.threshold"))
+                .suffix("%");
             if ui
-                .add(
-                    egui::Slider::new(&mut config.low_battery_threshold_percent, 5..=50)
-                        .suffix("%"),
-                )
+                .add(slider)
+                .on_hover_text(i18n.t("battery.threshold_desc"))
                 .changed()
             {
                 modified = true;
@@ -91,8 +92,12 @@ pub fn show(
         // 4. Poll Interval Slider (F6.3)
         ui.horizontal(|ui| {
             ui.label(i18n.t("battery.poll_interval"));
+            let slider = egui::Slider::new(&mut config.battery_poll_minutes, 1..=60)
+                .text(i18n.t("battery.poll_interval"))
+                .suffix(" min");
             if ui
-                .add(egui::Slider::new(&mut config.battery_poll_minutes, 1..=60).suffix(" min"))
+                .add(slider)
+                .on_hover_text(i18n.t("battery.poll_interval"))
                 .changed()
             {
                 modified = true;

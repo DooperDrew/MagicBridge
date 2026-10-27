@@ -2,6 +2,7 @@
 //!
 //! Complies with F7.1, F7.5, NFR-P5, and docs/04-ux.md.
 
+use std::io::Write;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
@@ -59,6 +60,7 @@ pub struct MagicBridgeApp {
     pub architecture_state: ArchitectureViewState,
     pub wizard_state: OnboardingWizardState,
     pub qa_state: HardwareQaViewState,
+    pub tab_pulse: Option<(SettingsTab, Instant)>,
 }
 
 impl MagicBridgeApp {
@@ -89,6 +91,7 @@ impl MagicBridgeApp {
             architecture_state: ArchitectureViewState::default(),
             wizard_state,
             qa_state,
+            tab_pulse: None,
         }
     }
 
@@ -179,19 +182,31 @@ impl App for MagicBridgeApp {
                             ui.add_space(4.0);
                             for (tab, icon, key) in tabs {
                                 let is_active = self.current_tab == tab;
+                                let is_pulsing =
+                                    self.tab_pulse.as_ref().is_some_and(|(t, inst)| {
+                                        *t == tab && inst.elapsed().as_millis() < 300
+                                    });
                                 let tooltip = self.i18n.t(key);
-                                let text = if is_active {
+                                let text = if is_pulsing {
+                                    RichText::new(icon)
+                                        .size(16.0)
+                                        .strong()
+                                        .color(Color32::from_rgb(0, 120, 215))
+                                } else if is_active {
                                     RichText::new(icon).size(16.0).strong()
                                 } else {
                                     RichText::new(icon).size(16.0)
                                 };
 
-                                if ui
-                                    .selectable_label(is_active, text)
-                                    .on_hover_text(tooltip)
-                                    .clicked()
-                                {
+                                let btn = egui::Button::new(text).selected(is_active);
+                                let res = ui.add_enabled(!is_active, btn).on_hover_text(tooltip);
+                                crate::set_accessible_name(ui, res.id, tooltip);
+                                if res.clicked() {
+                                    self.tab_pulse = Some((tab, Instant::now()));
                                     self.current_tab = tab;
+                                    println!("[UI] Tab switched ok: {:?}", tab);
+                                    let _ = std::io::stdout().flush();
+                                    ctx.request_repaint();
                                 }
                             }
 
@@ -217,14 +232,30 @@ impl App for MagicBridgeApp {
                     for (tab, icon, key) in tabs {
                         let label = format!("{} {}", icon, self.i18n.t(key));
                         let is_active = self.current_tab == tab;
-                        let text = if is_active {
-                            RichText::new(label).strong()
+                        let is_pulsing = self
+                            .tab_pulse
+                            .as_ref()
+                            .is_some_and(|(t, inst)| *t == tab && inst.elapsed().as_millis() < 300);
+                        let text = if is_pulsing {
+                            RichText::new(&label)
+                                .strong()
+                                .color(Color32::from_rgb(0, 120, 215))
+                        } else if is_active {
+                            RichText::new(&label).strong()
                         } else {
-                            RichText::new(label)
+                            RichText::new(&label)
                         };
 
-                        if ui.selectable_label(is_active, text).clicked() {
+                        let tooltip = self.i18n.t(key);
+                        let btn = egui::Button::new(text).selected(is_active);
+                        let res = ui.add_enabled(!is_active, btn).on_hover_text(tooltip);
+                        crate::set_accessible_name(ui, res.id, tooltip);
+                        if res.clicked() {
+                            self.tab_pulse = Some((tab, Instant::now()));
                             self.current_tab = tab;
+                            println!("[UI] Tab switched ok: {:?}", tab);
+                            let _ = std::io::stdout().flush();
+                            ctx.request_repaint();
                         }
                     }
                 });

@@ -677,15 +677,17 @@ pub fn export_qa_report(state: &HardwareQaViewState, i18n: &I18n) -> Result<Path
 
 /// Renders the visual A1843 QA keyboard matrix.
 fn render_qa_visual_keyboard(ui: &mut Ui, state: &mut HardwareQaViewState) {
-    let available_width = ui.available_width();
+    let available_width = ui.available_width().min(ui.max_rect().width());
     let total_units_x = 23.5f32;
-    let unit_size = (available_width / total_units_x).clamp(24.0, 34.0);
+    let unit_size = ((available_width - 8.0) / total_units_x).clamp(16.0, 34.0);
     let key_height = unit_size * 0.95;
     let key_spacing = 2.0;
+    let total_matrix_width = (total_units_x * (unit_size + key_spacing)) + 8.0;
+    let total_height = (6.0 * (key_height + key_spacing)) + 8.0;
 
     let (rect, _response) = ui.allocate_exact_size(
-        Vec2::new(available_width, (6.0 * (key_height + key_spacing)) + 8.0),
-        Sense::click_and_drag(),
+        Vec2::new(available_width.min(total_matrix_width), total_height),
+        Sense::hover(),
     );
 
     let painter = ui.painter_at(rect);
@@ -709,7 +711,11 @@ fn render_qa_visual_keyboard(ui: &mut Ui, state: &mut HardwareQaViewState) {
         let key_rect = Rect::from_min_size(egui::pos2(key_x, key_y), Vec2::new(key_w, key_h));
 
         let id = ui.make_persistent_id(format!("qa_key_{}", key.id));
-        let response = ui.interact(key_rect, id, Sense::click());
+        let mut response = ui.interact(key_rect, id, Sense::click());
+        let label = key.default_label;
+        response
+            .widget_info(move || egui::WidgetInfo::labeled(egui::WidgetType::Button, true, label));
+        response = response.on_hover_text(format!("Key: {} (VK: {:#04x})", label, key.vk));
 
         if response.clicked() {
             clicked_key = Some(key.clone());
@@ -951,8 +957,8 @@ pub fn show(ui: &mut Ui, state: &mut HardwareQaViewState, i18n: &I18n) {
 
     ui.add_space(6.0);
 
-    // 4. Category Breakdown Cards Bar
-    ui.horizontal(|ui| {
+    // 4. Category Breakdown Cards Bar (wraps responsibly to prevent clipping)
+    ui.horizontal_wrapped(|ui| {
         let is_all_selected = state.selected_category.is_none();
         if ui
             .selectable_label(is_all_selected, i18n.t("qa.category_all"))

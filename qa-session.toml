@@ -1,0 +1,84 @@
+# =============================================================================
+# ui-qa-tester Session Configuration for MagicBridge
+# Repository: https://github.com/DooperDrew/magicbridge
+# =============================================================================
+
+session_name = "magicbridge-settings-qa"
+
+# Path to the compiled MagicBridge Settings GUI binary (eframe/egui 0.31)
+target_exe = 'C:\Dev\AgenticAI\magicbridge\target\release\magicbridge-settings.exe'
+target_args = []
+
+# Window title filter to verify or attach
+target_window_title = "MagicBridge Settings"
+
+# Execution mode: "autonomous_crawl" or "goal_scenario"
+mode = "autonomous_crawl"
+
+# Strictly non-intrusive background mode: never steals physical mouse or keyboard focus
+focus_mode = "background"
+
+# Maximum UI exploration / goal steps
+max_steps = 15
+
+# Safety blocklist regex preventing accidental destructive clicks
+destructive_control_regex = '(?i)\b(delete|format|factory\s*reset|erase|wipe|uninstall|flash\s*firmware)\b'
+
+# Report & annotated screenshot output directory
+output_dir = "qa-reports/magicbridge"
+
+# Target GitHub repository for issue filing
+target_github_repo = "DooperDrew/magicbridge"
+
+# UI & report language ("en" or "it")
+locale = "en"
+
+[hardware]
+capture_stdout = true
+capture_stderr = true
+log_files = []
+correlation_pre_window_ms = 50
+correlation_post_window_ms = 1500
+ack_patterns = [
+    '(?i)\b(ack|ok|connected|ready|bound|synced|applied|saved)\b',
+    '(?i)(0xff00:0x0014|report\s*0x90|battery|a1843|namedpipe|profile)',
+]
+error_patterns = [
+    '(?i)\b(err|error|fail|failed|timeout|panic|disconnected|unreachable|denied)\b',
+    '(?i)(hid_error|hook_failed|pipe_busy|access_denied)',
+]
+
+[ai]
+provider = "heuristics_only"
+
+[[goals]]
+description = "Click Keyboard tab"
+expected_ui_text = "Keyboard"
+
+[[goals]]
+description = "Click Top Row tab"
+expected_ui_text = "Top Row"
+
+[[goals]]
+description = "Click Battery tab"
+expected_ui_text = "Battery"
+
+[[goals]]
+description = "Click General tab"
+expected_ui_text = "General"
+
+[[goals]]
+description = "Click Setup Wizard tab"
+expected_ui_text = "Setup Wizard"
+
+[[goals]]
+description = "Click Hardware QA tab"
+expected_ui_text = "Hardware QA"
+
+[[goals]]
+description = "Click Architecture tab"
+expected_ui_text = "Architecture"
+
+[[goals]]
+description = "Click About tab"
+expected_ui_text = "About"

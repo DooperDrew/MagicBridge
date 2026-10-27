@@ -104,13 +104,16 @@ pub fn show(
         let current_profile_name = config.active_profile.clone();
         let mut selected_name = current_profile_name.clone();
 
-        egui::ComboBox::from_id_salt("profile_selector")
+        let combo = egui::ComboBox::from_id_salt("profile_selector")
             .selected_text(&selected_name)
             .show_ui(ui, |ui| {
                 for name in config.profiles.keys() {
                     ui.selectable_value(&mut selected_name, name.clone(), name);
                 }
             });
+        let combo_id = combo.response.id;
+        combo.response.on_hover_text(i18n.t("profile.label"));
+        crate::set_accessible_name(ui, combo_id, i18n.t("profile.label"));
 
         if selected_name != current_profile_name
             && let Ok(()) = config.set_active_profile(&selected_name)
@@ -160,7 +163,7 @@ pub fn show(
             let current_layout_str = format!("{}", profile.layout);
             let mut selected_layout = profile.layout.clone();
 
-            egui::ComboBox::from_id_salt("layout_selector")
+            let combo = egui::ComboBox::from_id_salt("layout_selector")
                 .selected_text(current_layout_str)
                 .show_ui(ui, |ui| {
                     ui.selectable_value(
@@ -181,6 +184,9 @@ pub fn show(
                         "ISO French",
                     );
                 });
+            let combo_id = combo.response.id;
+            combo.response.on_hover_text(i18n.t("profile.layout"));
+            crate::set_accessible_name(ui, combo_id, i18n.t("profile.layout"));
 
             if selected_layout != profile.layout {
                 profile.layout = selected_layout;
@@ -213,7 +219,7 @@ pub fn show(
         ui.separator();
 
         // Presets dropdown (F3.1, F3.2)
-        egui::ComboBox::from_id_salt("presets_dropdown")
+        let combo = egui::ComboBox::from_id_salt("presets_dropdown")
             .selected_text(i18n.t("keyboard.presets"))
             .show_ui(ui, |ui| {
                 if ui.button(i18n.t("keyboard.preset_windows")).clicked()
@@ -238,6 +244,9 @@ pub fn show(
                     change = Some(ConfigChange::Modified);
                 }
             });
+        let combo_id = combo.response.id;
+        combo.response.on_hover_text(i18n.t("keyboard.presets"));
+        crate::set_accessible_name(ui, combo_id, i18n.t("keyboard.presets"));
 
         ui.separator();
 
@@ -381,10 +390,8 @@ fn render_visual_keyboard(
     let margin_x = ((available_width - keyboard_total_width) / 2.0).max(4.0);
     let margin_y = 4.0;
 
-    let (rect, _response) = ui.allocate_exact_size(
-        Vec2::new(available_width, total_height),
-        Sense::click_and_drag(),
-    );
+    let (rect, _response) =
+        ui.allocate_exact_size(Vec2::new(available_width, total_height), Sense::hover());
 
     let painter = ui.painter_at(rect);
 
@@ -416,9 +423,15 @@ fn render_visual_keyboard(
         let key_h = (key.height * key_height) + ((key.height - 1.0) * key_spacing);
 
         let key_rect = Rect::from_min_size(egui::pos2(key_x, key_y), Vec2::new(key_w, key_h));
+        let label = state.model.get_key_label(key.id, layout);
 
         let id = ui.make_persistent_id(format!("key_{}", key.id));
-        let response = ui.interact(key_rect, id, Sense::click());
+        let mut response = ui.interact(key_rect, id, Sense::click());
+        let label_for_info = label.clone();
+        response.widget_info(move || {
+            egui::WidgetInfo::labeled(egui::WidgetType::Button, true, label_for_info.clone())
+        });
+        response = response.on_hover_text(format!("Key: {}", label));
 
         if response.clicked() {
             clicked_key_id = Some(key.id.to_string());
@@ -487,8 +500,7 @@ fn render_visual_keyboard(
             egui::StrokeKind::Inside,
         );
 
-        // Get localized label
-        let label = state.model.get_key_label(key.id, layout);
+        // Localized label already fetched above
         let text_color = if is_selected {
             Color32::from_rgb(160, 80, 0)
         } else if is_remapped {
@@ -713,14 +725,20 @@ fn render_editor_parameters(ui: &mut Ui, editor: &mut KeyEditorState, i18n: &I18
                 "Space",
             ];
 
-            egui::ComboBox::from_id_salt("target_key_combo")
+            let combo = egui::ComboBox::from_id_salt("target_key_combo")
                 .selected_text(&editor.target_key_name)
                 .show_ui(ui, |ui| {
                     for t in targets {
                         ui.selectable_value(&mut editor.target_key_name, t.to_string(), t);
                     }
                 });
-            ui.add(egui::TextEdit::singleline(&mut editor.target_key_name).desired_width(120.0));
+            combo.response.on_hover_text(i18n.t("editor.target_key"));
+            ui.add(
+                egui::TextEdit::singleline(&mut editor.target_key_name)
+                    .hint_text("Key name")
+                    .desired_width(120.0),
+            )
+            .on_hover_text(i18n.t("editor.target_key"));
         }
         1 => {
             // Media Action
@@ -734,27 +752,44 @@ fn render_editor_parameters(ui: &mut Ui, editor: &mut KeyEditorState, i18n: &I18
                 ("prev_track", "Previous Track"),
                 ("stop", "Stop"),
             ];
-            egui::ComboBox::from_id_salt("media_combo")
+            let combo = egui::ComboBox::from_id_salt("media_combo")
                 .selected_text(&editor.media_command)
                 .show_ui(ui, |ui| {
                     for (cmd, desc) in media_ops {
                         ui.selectable_value(&mut editor.media_command, cmd.to_string(), desc);
                     }
                 });
+            combo.response.on_hover_text(i18n.t("editor.media_command"));
         }
         2 => {
             // Launch Program
             ui.label(i18n.t("editor.command"));
-            ui.add(egui::TextEdit::singleline(&mut editor.launch_command).desired_width(260.0));
+            ui.add(
+                egui::TextEdit::singleline(&mut editor.launch_command)
+                    .hint_text("Program path")
+                    .desired_width(260.0),
+            )
+            .on_hover_text(i18n.t("editor.command"));
         }
         3 => {
             // Open URL
             ui.label(i18n.t("editor.url"));
-            ui.add(egui::TextEdit::singleline(&mut editor.url_target).desired_width(260.0));
+            ui.add(
+                egui::TextEdit::singleline(&mut editor.url_target)
+                    .hint_text("https://...")
+                    .desired_width(260.0),
+            )
+            .on_hover_text(i18n.t("editor.url"));
         }
         4 => {
             // Send Shortcut
             ui.label(i18n.t("editor.shortcut_keys"));
+            ui.add(
+                egui::TextEdit::singleline(&mut editor.shortcut_keys)
+                    .hint_text("e.g. Win+Alt+T")
+                    .desired_width(180.0),
+            )
+            .on_hover_text(i18n.t("editor.shortcut_keys"));
             ui.add(egui::TextEdit::singleline(&mut editor.shortcut_keys).desired_width(180.0));
         }
         _ => {}
@@ -847,11 +882,19 @@ fn render_profile_dialogs(
                 ui.heading(i18n.t("profile.create_title"));
                 ui.horizontal(|ui| {
                     ui.label(i18n.t("profile.name_prompt"));
-                    ui.text_edit_singleline(name);
+                    let prompt = i18n.t("profile.name_prompt");
+                    let res = ui
+                        .add(
+                            egui::TextEdit::singleline(name)
+                                .hint_text(prompt)
+                                .desired_width(180.0),
+                        )
+                        .on_hover_text(prompt);
+                    crate::set_accessible_name(ui, res.id, prompt);
                 });
                 ui.horizontal(|ui| {
                     ui.label(i18n.t("profile.layout"));
-                    egui::ComboBox::from_id_salt("dialog_new_layout")
+                    let combo = egui::ComboBox::from_id_salt("dialog_new_layout")
                         .selected_text(format!("{layout}"))
                         .show_ui(ui, |ui| {
                             ui.selectable_value(layout, KeyboardLayout::IsoItalian, "ISO Italian");
@@ -860,6 +903,9 @@ fn render_profile_dialogs(
                             ui.selectable_value(layout, KeyboardLayout::IsoGerman, "ISO German");
                             ui.selectable_value(layout, KeyboardLayout::IsoFrench, "ISO French");
                         });
+                    let combo_id = combo.response.id;
+                    combo.response.on_hover_text(i18n.t("profile.layout"));
+                    crate::set_accessible_name(ui, combo_id, i18n.t("profile.layout"));
                 });
 
                 if let Some(ref err) = state.dialog_error {
@@ -900,7 +946,15 @@ fn render_profile_dialogs(
                 ui.heading(i18n.t("profile.duplicate_title"));
                 ui.horizontal(|ui| {
                     ui.label(i18n.t("profile.name_prompt"));
-                    ui.text_edit_singleline(name);
+                    let prompt = i18n.t("profile.name_prompt");
+                    let res = ui
+                        .add(
+                            egui::TextEdit::singleline(name)
+                                .hint_text(prompt)
+                                .desired_width(180.0),
+                        )
+                        .on_hover_text(prompt);
+                    crate::set_accessible_name(ui, res.id, prompt);
                 });
 
                 if let Some(ref err) = state.dialog_error {
@@ -935,7 +989,15 @@ fn render_profile_dialogs(
                 ui.heading(i18n.t("profile.rename_title"));
                 ui.horizontal(|ui| {
                     ui.label(i18n.t("profile.name_prompt"));
-                    ui.text_edit_singleline(name);
+                    let prompt = i18n.t("profile.name_prompt");
+                    let res = ui
+                        .add(
+                            egui::TextEdit::singleline(name)
+                                .hint_text(prompt)
+                                .desired_width(180.0),
+                        )
+                        .on_hover_text(prompt);
+                    crate::set_accessible_name(ui, res.id, prompt);
                 });
 
                 if let Some(ref err) = state.dialog_error {

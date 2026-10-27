@@ -87,6 +87,7 @@ Goal: Systematically validate MagicBridge against physical A1843 hardware, edge-
 - [ ] `[T3]` M9.2 Edge-case power & security validation: Modern standby/sleep resume, emergency disconnect key release, UIPI elevated window behavior, and Game Mode auto-pause. _(Automated mocks passing; Pending Physical Confirmation)_
 - [x] `[T1]` M9.3 Automated diagnostic & QA probe reporting: Interactive 109-key visual verification tool (`qa_view.rs`) with live keypress listener, category tracking, and export to Desktop/AppData. _(2026-10-25 — M9.3 completed in 65fa05d)_
 - [x] `[T1]` M9.4 Retrospective audit & hygiene: Align claims in docs with empirical evidence, log model tier executions, and link retrospective/lessons-learned in roadmap. _(2026-10-25 — M9.4 completed)_
+- [x] `[T2]` M9.5 Autonomous UI QA Loop & Automated Heuristic Verification: Direct integration with `ui-qa-tester` (`qa-session.toml`). Executed multi-cycle autonomous crawl across all GUI tabs, resolving visual clipping on the Hardware QA category selector, eliminating UX dead button friction, and achieving 100% AccessKit/UIA label compliance (0 findings). _(2026-10-27 — M9.5 completed, closes #17, closes #18)_
 **Exit:** 100% pass rate across physical A1843 hardware matrix recorded by human testing, zero lingering keys or crashes in edge cases.
 
 ## M10 — User Experience & Onboarding Improvements

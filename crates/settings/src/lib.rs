@@ -15,6 +15,14 @@ pub use keyboard_model::{A1843Model, KeyCluster, PhysicalKey};
 pub use views::qa_view::HardwareQaViewState;
 pub use views::wizard_view::{OnboardingWizardState, WizardAction};
 
+/// Sets an explicit accessible name on an AccessKit node for screen-reader and UI automation compliance.
+pub fn set_accessible_name(ui: &egui::Ui, id: egui::Id, name: impl Into<String>) {
+    let name_str = name.into();
+    ui.ctx().accesskit_node_builder(id, |node| {
+        node.set_label(name_str);
+    });
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

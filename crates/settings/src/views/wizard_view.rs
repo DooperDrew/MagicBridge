@@ -771,12 +771,16 @@ fn render_step_5_test_finish(
 
         // Interactive Text Input Area
         ui.group(|ui| {
-            ui.add(
-                egui::TextEdit::multiline(&mut state.test_input_text)
-                    .hint_text(i18n.t("wizard.test_hint"))
-                    .desired_rows(3)
-                    .desired_width(f32::INFINITY),
-            );
+            let hint = i18n.t("wizard.test_hint");
+            let res = ui
+                .add(
+                    egui::TextEdit::multiline(&mut state.test_input_text)
+                        .hint_text(hint)
+                        .desired_rows(3)
+                        .desired_width(f32::INFINITY),
+                )
+                .on_hover_text(hint);
+            crate::set_accessible_name(ui, res.id, hint);
 
             ui.add_space(4.0);
 

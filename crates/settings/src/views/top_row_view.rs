@@ -77,7 +77,7 @@ pub fn show(ui: &mut Ui, _state: &mut TopRowViewState, config: &mut Config, i18n
                 FnKeyChoice::Other(_) => i18n.t("top_row.fn_other"),
             };
 
-            egui::ComboBox::from_id_salt("fn_key_combo")
+            let combo = egui::ComboBox::from_id_salt("fn_key_combo")
                 .selected_text(current_fn_label)
                 .show_ui(ui, |ui| {
                     ui.selectable_value(
@@ -97,6 +97,11 @@ pub fn show(ui: &mut Ui, _state: &mut TopRowViewState, config: &mut Config, i18n
                         i18n.t("top_row.fn_disabled"),
                     );
                 });
+            let combo_id = combo.response.id;
+            combo
+                .response
+                .on_hover_text(i18n.t("top_row.fn_assignment"));
+            crate::set_accessible_name(ui, combo_id, i18n.t("top_row.fn_assignment"));
 
             if fn_key != profile.fn_key {
                 profile.fn_key = fn_key;

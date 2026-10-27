@@ -51,7 +51,7 @@ pub fn show(
             let current_lang = i18n.current_language();
             let mut selected_lang = current_lang.to_string();
 
-            egui::ComboBox::from_id_salt("ui_language_combo")
+            let combo = egui::ComboBox::from_id_salt("ui_language_combo")
                 .selected_text(if current_lang == "it" {
                     "Italiano"
                 } else {
@@ -61,6 +61,9 @@ pub fn show(
                     ui.selectable_value(&mut selected_lang, "en".to_string(), "English");
                     ui.selectable_value(&mut selected_lang, "it".to_string(), "Italiano");
                 });
+            let combo_id = combo.response.id;
+            combo.response.on_hover_text(i18n.t("general.language"));
+            crate::set_accessible_name(ui, combo_id, i18n.t("general.language"));
 
             if selected_lang != config.ui_language {
                 config.ui_language = selected_lang.clone();
@@ -93,9 +96,18 @@ pub fn show(
 
         // 3. Global Pause Hotkey (F9.1)
         ui.horizontal(|ui| {
-            ui.label(i18n.t("general.pause_hotkey"));
+            let label = i18n.t("general.pause_hotkey");
+            ui.label(label);
             let mut hotkey_str = config.pause_hotkey.clone().unwrap_or_default();
-            if ui.text_edit_singleline(&mut hotkey_str).changed() {
+            let res = ui
+                .add(
+                    egui::TextEdit::singleline(&mut hotkey_str)
+                        .hint_text("e.g. Pause, F12")
+                        .desired_width(120.0),
+                )
+                .on_hover_text(label);
+            crate::set_accessible_name(ui, res.id, label);
+            if res.changed() {
                 config.pause_hotkey = if hotkey_str.trim().is_empty() {
                     None
                 } else {
@@ -116,11 +128,17 @@ pub fn show(
         }
 
         ui.horizontal(|ui| {
-            ui.label(i18n.t("general.game_processes"));
-            if ui
-                .text_edit_singleline(&mut state.game_processes_text)
-                .changed()
-            {
+            let label = i18n.t("general.game_processes");
+            ui.label(label);
+            let res = ui
+                .add(
+                    egui::TextEdit::singleline(&mut state.game_processes_text)
+                        .hint_text("e.g. game.exe, steam.exe")
+                        .desired_width(260.0),
+                )
+                .on_hover_text(label);
+            crate::set_accessible_name(ui, res.id, label);
+            if res.changed() {
                 config.game_mode_processes = state
                     .game_processes_text
                     .split(',')
